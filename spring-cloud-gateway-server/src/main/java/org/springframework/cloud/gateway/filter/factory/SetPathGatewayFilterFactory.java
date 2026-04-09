@@ -35,24 +35,51 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.a
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.getUriTemplateVariables;
 
 /**
+ * 设置路径过滤器工厂。
+ * <p>
+ * 该过滤器使用 URI 模板重新设置请求路径，支持变量替换。 与 {@link PrefixPathGatewayFilterFactory}
+ * 不同，该过滤器会完全替换路径而非追加。
+ * <p>
+ * 配置参数：
+ * <ul>
+ * <li>template：路径模板，支持 URI 变量（如 {segment}）</li>
+ * </ul>
+ * <p>
+ * 配置示例（YAML）： <pre>
+ * filters:
+ *   - SetPath=/api/{segment}
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class SetPathGatewayFilterFactory extends AbstractGatewayFilterFactory<SetPathGatewayFilterFactory.Config> {
 
 	/**
-	 * Template key.
+	 * 模板参数键名。
 	 */
 	public static final String TEMPLATE_KEY = "template";
 
+	/**
+	 * 默认构造方法。
+	 */
 	public SetPathGatewayFilterFactory() {
 		super(Config.class);
 	}
 
+	/**
+	 * 返回快捷字段顺序。
+	 * @return 字段顺序列表
+	 */
 	@Override
 	public List<String> shortcutFieldOrder() {
 		return Arrays.asList(TEMPLATE_KEY);
 	}
 
+	/**
+	 * 创建设置路径过滤器。
+	 * @param config 过滤器配置
+	 * @return 网关过滤器实例
+	 */
 	@Override
 	public GatewayFilter apply(Config config) {
 		UriTemplate uriTemplate = new UriTemplate(config.template);
@@ -61,13 +88,16 @@ public class SetPathGatewayFilterFactory extends AbstractGatewayFilterFactory<Se
 			@Override
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 				ServerHttpRequest req = exchange.getRequest();
+				// 保存原始请求 URL
 				addOriginalRequestUrl(exchange, req.getURI());
 
+				// 获取 URI 变量进行替换
 				Map<String, String> uriVariables = getUriTemplateVariables(exchange);
 
 				URI uri = uriTemplate.expand(uriVariables);
 				String newPath = uri.getRawPath();
 
+				// 更新请求 URL
 				exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, uri);
 
 				ServerHttpRequest request = req.mutate().path(newPath).build();
@@ -83,14 +113,26 @@ public class SetPathGatewayFilterFactory extends AbstractGatewayFilterFactory<Se
 		};
 	}
 
+	/**
+	 * 设置路径过滤器配置类。
+	 */
 	public static class Config {
 
+		/** 路径模板 */
 		private String template;
 
+		/**
+		 * 获取路径模板。
+		 * @return 路径模板字符串
+		 */
 		public String getTemplate() {
 			return template;
 		}
 
+		/**
+		 * 设置路径模板。
+		 * @param template 路径模板字符串
+		 */
 		public void setTemplate(String template) {
 			this.template = template;
 		}

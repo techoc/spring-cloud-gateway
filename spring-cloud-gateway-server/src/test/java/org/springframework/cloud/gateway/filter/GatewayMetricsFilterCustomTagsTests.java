@@ -38,7 +38,16 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.cloud.gateway.config.GatewayMetricsProperties.DEFAULT_PREFIX;
 
 /**
+ * GatewayMetricsFilter 自定义标签测试类
+ *
+ * 本测试类用于验证 GatewayMetricsFilter 支持自定义标签的功能，包括： -
+ * 验证默认标签（outcome、status、httpStatusCode、httpMethod、routeId、routeUri）正确记录 - 验证通过
+ * GatewayTagsProvider 配置的自定义标签（custom1、custom2）正确记录
+ *
+ * 通过实现自定义的 GatewayTagsProvider bean，可以为指标添加额外的业务相关标签， 用于更细粒度的指标分析和监控。
+ *
  * @author Ingyu Hwang
+ * @author 译者：Spring Cloud Gateway 团队
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
@@ -52,6 +61,9 @@ class GatewayMetricsFilterCustomTagsTests extends BaseWebClientTests {
 	@Value("${test.uri}")
 	private String testUri;
 
+	/**
+	 * 测试网关请求指标包含自定义标签 验证：除了默认标签外，还应包含 custom1=tag1 和 custom2=tag2
+	 */
 	@Test
 	void gatewayRequestsMeterFilterHasCustomTags() {
 		testClient.get().uri("/headers").exchange().expectStatus().isOk();
@@ -69,10 +81,20 @@ class GatewayMetricsFilterCustomTagsTests extends BaseWebClientTests {
 		assertMetricsContainsTag("custom2", "tag2");
 	}
 
+	/**
+	 * 断言指定标签键值对存在于请求指标中
+	 * @param tagKey 标签键名
+	 * @param tagValue 标签值
+	 */
 	private void assertMetricsContainsTag(String tagKey, String tagValue) {
 		assertThat(this.meterRegistry.get(REQUEST_METRICS_NAME).tag(tagKey, tagValue).timer().count()).isEqualTo(1);
 	}
 
+	/**
+	 * 自定义测试配置类
+	 *
+	 * 定义一个自定义的 GatewayTagsProvider bean， 返回包含 custom1 和 custom2 两个自定义标签的 Tags。
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@Import(DefaultTestConfig.class)

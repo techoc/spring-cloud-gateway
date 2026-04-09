@@ -40,13 +40,25 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.cloud.gateway.test.TestUtils.getMap;
 
 /**
+ * MapRequestHeaderGatewayFilterFactory 集成测试类
+ *
+ * 本测试类用于验证 MapRequestHeaderGatewayFilterFactory 的请求头映射功能，包括： - 测试基本的请求头映射 - 测试通过 Java DSL
+ * 配置请求头映射 - 测试多值请求头的映射 - 测试映射 null 值请求头 - 测试源请求头不存在时的行为 - 测试 toString 格式输出
+ *
+ * MapRequestHeaderGatewayFilterFactory 负责将一个请求头的值映射到另一个请求头， 类似于 Apache Httpd 的
+ * RewriteRule 和 Nginx 的 proxy_set_header。
+ *
  * @author Tony Clarke
+ * @author 译者：Spring Cloud Gateway 团队
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
 @ActiveProfiles(profiles = "request-map-header-web-filter")
 class MapRequestHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 
+	/**
+	 * 测试基本的请求头映射功能 验证：请求头 a=tome 应被映射到 X-Request-Example=tome
+	 */
 	@Test
 	void mapRequestHeaderFilterWorks() {
 		testClient.get().uri("/headers").header("Host", "www.maprequestheader.org").header("a", "tome").exchange()
@@ -56,6 +68,9 @@ class MapRequestHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 				});
 	}
 
+	/**
+	 * 测试通过 Java DSL 配置请求头映射 验证：Java DSL 配置的映射规则应正确生效
+	 */
 	@Test
 	void mapRequestHeaderFilterWorksJavaDsl() {
 		testClient.get().uri("/headers").header("Host", "www.maprequestheaderjava.org").header("b", "tome").exchange()
@@ -65,6 +80,9 @@ class MapRequestHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 				});
 	}
 
+	/**
+	 * 测试多值请求头的映射 验证：多个请求头值应都被映射到目标请求头
+	 */
 	@SuppressWarnings("unchecked")
 	@Test
 	void mapRequestHeaderWithMultiValueFilterWorks() {
@@ -77,6 +95,9 @@ class MapRequestHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 				});
 	}
 
+	/**
+	 * 测试映射 null 值的请求头 验证：null 值的请求头不应被映射到目标请求头
+	 */
 	@Test
 	void mapRequestHeaderWithNullValueFilterWorks() {
 		testClient.get().uri("/headers").header("Host", "www.maprequestheader.org").header("a", (String) null)
@@ -86,6 +107,9 @@ class MapRequestHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 				});
 	}
 
+	/**
+	 * 测试源请求头不存在时的行为 验证：不存在源请求头时，目标请求头不应被创建
+	 */
 	@Test
 	void mapRequestHeaderWhenInputHeaderDoesNotExist() {
 		testClient.get().uri("/headers").header("Host", "www.maprequestheader.org").exchange().expectBody(Map.class)
@@ -95,6 +119,9 @@ class MapRequestHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 				});
 	}
 
+	/**
+	 * 测试过滤器的 toString 格式输出 验证：toString 应包含配置的源请求头和目标请求头
+	 */
 	@Test
 	void toStringFormat() {
 		Config config = new Config().setFromHeader("myfromheader").setToHeader("mytoheader");
@@ -102,6 +129,11 @@ class MapRequestHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 		assertThat(filter.toString()).contains("myfromheader").contains("mytoheader");
 	}
 
+	/**
+	 * 测试配置类
+	 *
+	 * 定义测试路由配置，测试通过 Java DSL 配置请求头映射
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@Import(DefaultTestConfig.class)

@@ -33,9 +33,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer;
 
 /**
- * 代理响应自动配置类。
- * 用于在 Spring WebFlux 的 <code>@RequestMapping</code> 方法中自动配置 {@link ProxyExchange} 参数处理器。
- * 该配置类会在检测到 Web 应用环境时自动启用，并注册必要的 Bean。
+ * 代理响应自动配置类。 用于在 Spring WebFlux 的 <code>@RequestMapping</code> 方法中自动配置
+ * {@link ProxyExchange} 参数处理器。 该配置类会在检测到 Web 应用环境时自动启用，并注册必要的 Bean。
  *
  * @author Dave Syer
  * @author Tim Ysewyn
@@ -51,8 +50,7 @@ public class ProxyResponseAutoConfiguration implements WebFluxConfigurer {
 	private ApplicationContext context;
 
 	/**
-	 * 创建代理交换参数解析器 Bean。
-	 * 如果容器中不存在 WebClient.Builder，则使用默认的构建器。
+	 * 创建代理交换参数解析器 Bean。 如果容器中不存在 WebClient.Builder，则使用默认的构建器。
 	 * @param optional 可选的 WebClient 构建器
 	 * @param proxy 代理配置属性
 	 * @return 配置好的代理交换参数解析器实例
@@ -71,9 +69,7 @@ public class ProxyResponseAutoConfiguration implements WebFluxConfigurer {
 	}
 
 	/**
-	 * 配置自定义参数解析器。
-	 * 将代理交换参数解析器添加到 WebFlux 的参数解析器列表中，
-	 * 使其能够处理控制器方法中的 ProxyExchange 参数。
+	 * 配置自定义参数解析器。 将代理交换参数解析器添加到 WebFlux 的参数解析器列表中， 使其能够处理控制器方法中的 ProxyExchange 参数。
 	 * @param configurer 参数解析器配置器
 	 */
 	@Override

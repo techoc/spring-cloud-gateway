@@ -35,46 +35,88 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 
 /**
+ * 带缓存功能的路由定位器，装饰器模式实现。
+ * <p>
+ * 该类作为 {@link RouteLocator} 的装饰器，为底层路由定位器添加缓存能力：
+ * <ul>
+ * <li>首次获取路由时从被装饰的定位器加载，并缓存结果</li>
+ * <li>后续请求直接返回缓存数据，避免重复计算</li>
+ * <li>监听 {@link RefreshRoutesEvent} 事件，异步刷新缓存</li>
+ * </ul>
+ * <p>
+ * 缓存使用 Reactor 的 {@link CacheFlux} 实现，天然支持响应式编程模型。 刷新操作是异步的，不会阻塞当前请求。
+ * <p>
+ * 实现了 {@link Ordered} 接口，返回顺序值为 0。
+ *
  * @author Spencer Gibb
  */
 public class CachingRouteLocator
 		implements Ordered, RouteLocator, ApplicationListener<RefreshRoutesEvent>, ApplicationEventPublisherAware {
 
+	/** 日志记录器 */
 	private static final Log log = LogFactory.getLog(CachingRouteLocator.class);
 
+	/** 缓存键常量 */
 	private static final String CACHE_KEY = "routes";
 
+	/** 被装饰的底层路由定位器 */
 	private final RouteLocator delegate;
 
+	/** 缓存的路由流，使用 CacheFlux 实现响应式缓存 */
 	private final Flux<Route> routes;
 
+	/** 内部缓存存储，键为 CACHE_KEY，值为路由信号列表 */
 	private final Map<String, List> cache = new ConcurrentHashMap<>();
 
+	/** Spring 应用事件发布器，用于发布刷新结果事件 */
 	private ApplicationEventPublisher applicationEventPublisher;
 
+	/**
+	 * 构造方法，初始化缓存路由流。
+	 * @param delegate 被装饰的底层路由定位器
+	 */
 	public CachingRouteLocator(RouteLocator delegate) {
 		this.delegate = delegate;
 		routes = CacheFlux.lookup(cache, CACHE_KEY, Route.class).onCacheMissResume(this::fetch);
 	}
 
+	/**
+	 * 从底层定位器获取路由，并按顺序排序。
+	 * @return 排序后的路由流
+	 */
 	private Flux<Route> fetch() {
 		return this.delegate.getRoutes().sort(AnnotationAwareOrderComparator.INSTANCE);
 	}
 
+	/**
+	 * 获取路由列表。
+	 * <p>
+	 * 首次调用会从底层定位器加载并缓存，后续调用直接返回缓存数据。
+	 * @return 包含所有路由的响应式流
+	 */
 	@Override
 	public Flux<Route> getRoutes() {
 		return this.routes;
 	}
 
 	/**
-	 * Clears the routes cache.
-	 * @return routes flux
+	 * 手动清除路由缓存。
+	 * <p>
+	 * 下次调用 {@link #getRoutes()} 时将重新从底层定位器加载。
+	 * @return 清除缓存后的路由流
 	 */
 	public Flux<Route> refresh() {
 		this.cache.clear();
 		return this.routes;
 	}
 
+	/**
+	 * 监听路由刷新事件，异步刷新缓存。
+	 * <p>
+	 * 当收到 {@link RefreshRoutesEvent} 时，会异步从底层定位器重新加载路由， 加载成功后更新缓存并发布
+	 * {@link RefreshRoutesResultEvent} 成功事件； 若加载失败，则发布包含异常的失败事件。
+	 * @param event 路由刷新事件
+	 */
 	@Override
 	public void onApplicationEvent(RefreshRoutesEvent event) {
 		try {
@@ -89,6 +131,12 @@ public class CachingRouteLocator
 		}
 	}
 
+	/**
+	 * 处理路由刷新错误。
+	 * <p>
+	 * 记录错误日志并发布包含异常的刷新结果事件。
+	 * @param throwable 发生的异常
+	 */
 	private void handleRefreshError(Throwable throwable) {
 		if (log.isErrorEnabled()) {
 			log.error("Refresh routes error !!!", throwable);
@@ -96,11 +144,19 @@ public class CachingRouteLocator
 		applicationEventPublisher.publishEvent(new RefreshRoutesResultEvent(this, throwable));
 	}
 
+	/**
+	 * 获取组件的排序值。
+	 * @return 排序值 0
+	 */
 	@Override
 	public int getOrder() {
 		return 0;
 	}
 
+	/**
+	 * 设置应用事件发布器。
+	 * @param applicationEventPublisher Spring 应用事件发布器
+	 */
 	@Override
 	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
 		this.applicationEventPublisher = applicationEventPublisher;

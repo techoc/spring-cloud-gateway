@@ -23,10 +23,23 @@ import javax.validation.constraints.Max;
 import org.springframework.util.unit.DataSize;
 
 // https://in.relation.to/2017/03/02/adding-custom-constraint-definitions-via-the-java-service-loader/
+/**
+ * {@link DataSize} 类型的最大值校验器。
+ * <p>
+ * 配合 {@link Max} 注解使用，验证 {@link DataSize} 值是否不超过指定的最大字节数。 {@code null} 值视为合法。
+ * </p>
+ */
 public class MaxDataSizeValidator implements ConstraintValidator<Max, DataSize> {
 
+	/** 从 @Max 注解中获取的最大值 */
 	private long maxValue;
 
+	/**
+	 * 校验给定的 DataSize 值是否合法。
+	 * @param value 待校验的 DataSize 值，{@code null} 视为合法
+	 * @param context 约束校验上下文
+	 * @return {@code true} 如果值为 {@code null} 或不超过最大值；否则返回 {@code false}
+	 */
 	@Override
 	public boolean isValid(DataSize value, ConstraintValidatorContext context) {
 		// null values are valid
@@ -36,6 +49,10 @@ public class MaxDataSizeValidator implements ConstraintValidator<Max, DataSize> 
 		return value.toBytes() <= maxValue;
 	}
 
+	/**
+	 * 初始化校验器，从 {@link Max} 注解中提取最大值。
+	 * @param maxValue @Max 注解实例
+	 */
 	@Override
 	public void initialize(Max maxValue) {
 		this.maxValue = maxValue.value();

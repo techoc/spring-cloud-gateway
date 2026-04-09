@@ -33,6 +33,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.DispatcherHandler;
 
 /**
+ * Gateway Resilience4J 熔断器自动配置类。
+ * <p>
+ * 当类路径中存在 Resilience4J 相关依赖时，自动配置基于 Resilience4J 的熔断器过滤器工厂， 为网关提供请求熔断和回退功能。
+ * </p>
+ *
  * @author Ryan Baxter
  */
 @Configuration(proxyBeanMethods = false)
@@ -42,6 +47,15 @@ import org.springframework.web.reactive.DispatcherHandler;
 		ReactiveCircuitBreakerFactory.class, ReactiveResilience4JCircuitBreakerFactory.class })
 public class GatewayResilience4JCircuitBreakerAutoConfiguration {
 
+	/**
+	 * 创建 Resilience4J 熔断器过滤器工厂。
+	 * <p>
+	 * 封装 {@link ReactiveResilience4JCircuitBreakerFactory}， 为路由配置提供熔断能力。
+	 * </p>
+	 * @param reactiveCircuitBreakerFactory Resilience4J 响应式熔断器工厂
+	 * @param dispatcherHandler 分发器处理器（用于回退转发）
+	 * @return Resilience4J 熔断器过滤器工厂
+	 */
 	@Bean
 	@ConditionalOnBean(ReactiveResilience4JCircuitBreakerFactory.class)
 	@ConditionalOnEnabledFilter
@@ -51,6 +65,10 @@ public class GatewayResilience4JCircuitBreakerAutoConfiguration {
 		return new SpringCloudCircuitBreakerResilience4JFilterFactory(reactiveCircuitBreakerFactory, dispatcherHandler);
 	}
 
+	/**
+	 * 创建回退头过滤器工厂 Bean。 当容器中不存在 FallbackHeadersGatewayFilterFactory 且过滤器启用时自动配置。
+	 * @return 回退头过滤器工厂
+	 */
 	@Bean
 	@ConditionalOnMissingBean
 	@ConditionalOnEnabledFilter

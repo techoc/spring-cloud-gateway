@@ -32,15 +32,39 @@ import org.springframework.cloud.gateway.handler.predicate.RoutePredicateFactory
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * OnEnabledPredicateTests - 路由谓词名称规范化测试类
+ *
+ * 本测试类验证OnEnabledPredicate对路由谓词类名的规范化逻辑： -
+ * 将RoutePredicateFactory类名转换为spring.cloud.gateway.predicate.{name}格式的属性名
+ *
+ * 例如： - AfterRoutePredicateFactory -> predicate.after -
+ * CloudFoundryRouteServiceRoutePredicateFactory -> predicate.cloud-foundry-route-service
+ * - ReadBodyRoutePredicateFactory -> predicate.read-body -
+ * RemoteAddrRoutePredicateFactory -> predicate.remote-addr
+ *
+ * @author test
+ */
 class OnEnabledPredicateTests {
 
+	/** 待测试的OnEnabledPredicate实例 */
 	private OnEnabledPredicate onEnabledPredicate;
 
+	/**
+	 * setUp - 测试前准备
+	 *
+	 * 初始化OnEnabledPredicate实例
+	 */
 	@BeforeEach
 	void setUp() {
 		this.onEnabledPredicate = new OnEnabledPredicate();
 	}
 
+	/**
+	 * shouldNormalizePredicatesNames - 测试路由谓词名称规范化
+	 *
+	 * 验证各种RoutePredicateFactory的类名能够被正确转换为配置属性名格式
+	 */
 	@Test
 	void shouldNormalizePredicatesNames() {
 		List<Class<? extends RoutePredicateFactory<?>>> predicates = Arrays.asList(AfterRoutePredicateFactory.class,

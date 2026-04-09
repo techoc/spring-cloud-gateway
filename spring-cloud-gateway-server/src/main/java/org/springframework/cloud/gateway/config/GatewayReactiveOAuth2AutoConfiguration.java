@@ -36,6 +36,14 @@ import org.springframework.security.oauth2.client.web.DefaultReactiveOAuth2Autho
 import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizedClientRepository;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
+/**
+ * Gateway响应式OAuth2自动配置类。
+ * <p>
+ * 负责自动配置OAuth2客户端支持，为网关提供Token中继功能， 使网关能够将OAuth2令牌从传入请求转发到下游服务。
+ *
+ * @author Joe Grandja
+ * @author Marcin Wojtysiak
+ */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "spring.cloud.gateway.enabled", matchIfMissing = true)
 @ConditionalOnClass({ OAuth2AuthorizedClient.class, SecurityWebFilterChain.class, SecurityProperties.class })
@@ -43,6 +51,14 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @AutoConfigureAfter(ReactiveSecurityAutoConfiguration.class)
 public class GatewayReactiveOAuth2AutoConfiguration {
 
+	/**
+	 * 创建并配置响应式OAuth2授权客户端管理器。
+	 * <p>
+	 * 该管理器负责管理OAuth2授权客户端的生命周期， 支持授权码模式和刷新令牌模式。
+	 * @param clientRegistrationRepository 客户端注册仓库
+	 * @param authorizedClientRepository 授权客户端仓库
+	 * @return 响应式OAuth2授权客户端管理器
+	 */
 	@Bean
 	@ConditionalOnMissingBean
 	@ConditionalOnBean(ReactiveClientRegistrationRepository.class)

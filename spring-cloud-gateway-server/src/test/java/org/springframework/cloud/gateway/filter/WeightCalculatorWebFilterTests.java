@@ -38,8 +38,21 @@ import static org.junit.jupiter.api.condition.JRE.JAVA_17;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * WeightCalculatorWebFilter 单元测试类
+ *
+ * 本测试类用于验证 WeightCalculatorWebFilter 的权重计算功能，包括： - 测试权重值的规范化计算 - 测试基于权重的路由选择 - 测试
+ * PredicateArgsEvent 事件的接收和处理
+ *
+ * WeightCalculatorWebFilter 是 Spring Cloud Gateway 的权重计算过滤器， 根据配置的权重值在同组路由中进行加权负载均衡。
+ *
+ * @author 译者：Spring Cloud Gateway 团队
+ */
 public class WeightCalculatorWebFilterTests {
 
+	/**
+	 * 测试权重计算逻辑 验证：权重值应被正确规范化为 0-1 之间的概率值
+	 */
 	@Test
 	public void testWeightCalculation() {
 		WeightCalculatorWebFilter filter = createFilter();
@@ -58,10 +71,23 @@ public class WeightCalculatorWebFilterTests {
 		assertWeightCalculation(filter, grp2, grp2idx++, 4, asList(0.125, 0.125, 0.25, 0.5), 0.125, 0.25, 0.5);
 	}
 
+	/**
+	 * 创建 WeightCalculatorWebFilter 实例
+	 * @return WeightCalculatorWebFilter 实例
+	 */
 	private WeightCalculatorWebFilter createFilter() {
 		return new WeightCalculatorWebFilter(null, new ConfigurationService(null, () -> null, () -> null));
 	}
 
+	/**
+	 * 断言权重计算的正确性
+	 * @param filter WeightCalculatorWebFilter 实例
+	 * @param group 权重组名
+	 * @param item 当前路由项编号
+	 * @param weight 权重值
+	 * @param normalized 预期的规范化权重列表
+	 * @param middleRanges 预期的中间范围值
+	 */
 	private void assertWeightCalculation(WeightCalculatorWebFilter filter, String group, int item, int weight,
 			List<Double> normalized, Double... middleRanges) {
 		String routeId = route(item);
@@ -91,10 +117,18 @@ public class WeightCalculatorWebFilterTests {
 		}
 	}
 
+	/**
+	 * 生成路由 ID
+	 * @param i 路由编号
+	 * @return 路由 ID 字符串
+	 */
 	private String route(int i) {
 		return "route" + i;
 	}
 
+	/**
+	 * 测试使用随机数选择路由 验证：根据权重计算的范围，随机数应正确映射到对应路由 注意：此测试在 JDK 17 上被禁用
+	 */
 	// TODO: modify implementation for testability on JDK17 for Spring 6
 	@Test
 	@DisabledOnJre(JAVA_17)
@@ -127,6 +161,9 @@ public class WeightCalculatorWebFilterTests {
 		assertThat(weights).containsEntry("groupa", "route3");
 	}
 
+	/**
+	 * 测试接收 PredicateArgsEvent 事件 验证：事件中的权重配置应被正确解析并添加到过滤器
+	 */
 	@Test
 	public void receivesPredicateArgsEvent() {
 		TestWeightCalculatorWebFilter filter = new TestWeightCalculatorWebFilter();
@@ -143,6 +180,11 @@ public class WeightCalculatorWebFilterTests {
 		assertThat(weightConfig.getWeight()).isEqualTo(1);
 	}
 
+	/**
+	 * 用于测试的 WeightCalculatorWebFilter 子类
+	 *
+	 * 重写 addWeightConfig 方法以捕获添加的权重配置， 便于验证事件处理逻辑。
+	 */
 	class TestWeightCalculatorWebFilter extends WeightCalculatorWebFilter {
 
 		private WeightConfig weightConfig;

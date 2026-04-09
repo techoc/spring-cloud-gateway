@@ -58,11 +58,31 @@ import static org.springframework.cloud.gateway.handler.predicate.RoutePredicate
 		 * "spring.cloud.gateway.discovery.locator.filters[0].args[replacement]='/$\\\\{remaining}'",
 		 */
 		})
+/**
+ * DiscoveryClientRouteDefinitionLocatorTests - 服务发现路由定位器测试类
+ *
+ * 本测试类验证DiscoveryClientRouteDefinitionLocator的高级配置功能： -
+ * include-expression：过滤需要创建路由的服务（通过元数据） - route-id-prefix：路由ID前缀配置 -
+ * lower-case-service-id：服务ID大小写转换 - 自动生成Path谓词和RewritePath过滤器
+ *
+ * 测试配置： - 只包含metadata['edge'] == 'true'的服务 - 路由ID前缀为"testedge_" - 服务ID转为小写
+ *
+ * @author test
+ */
 public class DiscoveryClientRouteDefinitionLocatorTests {
 
+	/** 服务发现路由定义定位器 */
 	@Autowired(required = false)
 	private DiscoveryClientRouteDefinitionLocator locator;
 
+	/**
+	 * includeExpressionWorks - 测试服务过滤表达式功能
+	 *
+	 * 验证以下功能： 1. DiscoveryClientRouteDefinitionLocator Bean被正确创建 2.
+	 * 根据include-expression过滤，只有包含edge=true元数据的服务被创建路由 3.
+	 * SERVICE1（edge=true）被创建路由，ID为testedge_SERVICE1 4. Service2（无元数据）未被创建路由 5.
+	 * service3（edge=true）被创建路由，ID为testedge_service3 6. 自动生成的Path谓词和RewritePath过滤器配置正确
+	 */
 	@Test
 	public void includeExpressionWorks() {
 		assertThat(locator).as("DiscoveryClientRouteDefinitionLocator was null").isNotNull();
@@ -103,10 +123,19 @@ public class DiscoveryClientRouteDefinitionLocatorTests {
 				.containsEntry(REPLACEMENT_KEY, "/${remaining}");
 	}
 
+	/**
+	 * Config - 测试配置类
+	 *
+	 * 提供模拟的服务发现客户端配置
+	 */
 	@SpringBootConfiguration
 	@EnableAutoConfiguration
 	protected static class Config {
 
+		/**
+		 * discoveryClient - 模拟的响应式服务发现客户端
+		 * @return ReactiveDiscoveryClient模拟实例
+		 */
 		@Bean
 		ReactiveDiscoveryClient discoveryClient() {
 			ReactiveDiscoveryClient discoveryClient = mock(ReactiveDiscoveryClient.class);
@@ -117,6 +146,12 @@ public class DiscoveryClientRouteDefinitionLocatorTests {
 			return discoveryClient;
 		}
 
+		/**
+		 * whenInstance - 配置服务实例的模拟行为
+		 * @param discoveryClient 服务发现客户端模拟对象
+		 * @param serviceId 服务ID
+		 * @param metadata 服务元数据
+		 */
 		private void whenInstance(ReactiveDiscoveryClient discoveryClient, String serviceId,
 				Map<String, String> metadata) {
 			if ("SERVICE1".equals(serviceId) || "Service2".equals(serviceId)) {

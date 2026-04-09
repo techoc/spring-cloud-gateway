@@ -56,6 +56,17 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+/**
+ * GatewayControllerEndpointTests - Gateway控制器端点测试类
+ *
+ * 本测试类用于验证Spring Cloud Gateway Actuator端点的功能，包括： - 路由刷新功能（/actuator/gateway/refresh） -
+ * 路由列表查询（/actuator/gateway/routes） - 单个路由详情查询 - 路由过滤器列表查询（/actuator/gateway/routefilters）
+ * - 路由谓词列表查询（/actuator/gateway/routepredicates） - 动态创建路由（POST
+ * /actuator/gateway/routes/{id}） - 动态删除路由（DELETE /actuator/gateway/routes/{id}） -
+ * 路由定义的完整生命周期测试
+ *
+ * @author test
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = { "management.endpoints.web.exposure.include=*",
 		"spring.cloud.gateway.actuator.verbose.enabled=true" }, webEnvironment = RANDOM_PORT)
@@ -73,6 +84,11 @@ public class GatewayControllerEndpointTests {
 				.isOk();
 	}
 
+	/**
+	 * testRoutes - 测试获取所有路由列表
+	 *
+	 * 验证GET请求到/actuator/gateway/routes端点能够返回所有已配置的路由信息 期望响应状态码为200 OK，且响应体包含非空的路由列表
+	 */
 	@Test
 	public void testRoutes() {
 		testClient.get().uri("http://localhost:" + port + "/actuator/gateway/routes").exchange().expectStatus().isOk()
@@ -270,8 +286,18 @@ public class GatewayControllerEndpointTests {
 
 	}
 
+	/**
+	 * TestFilterGatewayFilterFactory - 测试用自定义过滤器工厂
+	 *
+	 * 继承AbstractGatewayFilterFactory，用于测试Gateway对自定义过滤器的注册和识别
+	 */
 	private static class TestFilterGatewayFilterFactory extends AbstractGatewayFilterFactory {
 
+		/**
+		 * apply - 创建测试用GatewayFilter
+		 * @param config 过滤器配置（此处未使用，返回null）
+		 * @return GatewayFilter实例
+		 */
 		@Override
 		public GatewayFilter apply(Object config) {
 			return null;
@@ -279,12 +305,26 @@ public class GatewayControllerEndpointTests {
 
 	}
 
+	/**
+	 * TestRoutePredicateFactory - 测试用自定义谓词工厂
+	 *
+	 * 继承AbstractRoutePredicateFactory，用于测试Gateway对自定义谓词的注册和识别
+	 */
 	private static class TestRoutePredicateFactory extends AbstractRoutePredicateFactory {
 
+		/**
+		 * 构造函数
+		 * @param configClass 配置类类型
+		 */
 		TestRoutePredicateFactory(Class configClass) {
 			super(configClass);
 		}
 
+		/**
+		 * apply - 创建测试用谓词
+		 * @param config 谓词配置（此处未使用）
+		 * @return 始终返回true的谓词
+		 */
 		@Override
 		public Predicate<ServerWebExchange> apply(Object config) {
 			return (GatewayPredicate) serverWebExchange -> true;

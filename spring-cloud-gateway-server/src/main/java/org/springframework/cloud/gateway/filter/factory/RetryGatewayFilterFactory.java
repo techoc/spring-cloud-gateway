@@ -49,33 +49,70 @@ import org.springframework.web.server.ServerWebExchange;
 
 import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 
+/**
+ * 重试过滤器工厂。
+ * <p>
+ * 该过滤器在请求失败时自动重试，支持基于 HTTP 状态码和异常类型的重试策略。
+ * <p>
+ * 配置参数：
+ * <ul>
+ * <li>retries：最大重试次数（默认 3）</li>
+ * <li>statuses：需要重试的 HTTP 状态码列表</li>
+ * <li>series：需要重试的 HTTP 状态码系列（如 SERVER_ERROR）</li>
+ * <li>methods：需要重试的 HTTP 方法列表（默认 GET）</li>
+ * <li>exceptions：需要重试的异常类型列表（默认 IOException、TimeoutException）</li>
+ * <li>backoff：退避策略配置</li>
+ * </ul>
+ * <p>
+ * 配置示例（YAML）： <pre>
+ * filters:
+ *   - Retry=3,503,GET,500
+ * </pre>
+ *
+ * @author Spencer Gibb
+ */
 public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<RetryGatewayFilterFactory.RetryConfig> {
 
 	/**
-	 * Retry iteration key.
+	 * 重试迭代次数属性键名。
 	 */
 	public static final String RETRY_ITERATION_KEY = "retry_iteration";
 
 	private static final Log log = LogFactory.getLog(RetryGatewayFilterFactory.class);
 
+	/**
+	 * 默认构造方法。
+	 */
 	public RetryGatewayFilterFactory() {
 		super(RetryConfig.class);
 	}
 
+	/**
+	 * 将可变参数转换为列表。
+	 */
 	private static <T> List<T> toList(T... items) {
 		return new ArrayList<>(Arrays.asList(items));
 	}
 
+	/**
+	 * 返回快捷字段顺序。
+	 */
 	@Override
 	public List<String> shortcutFieldOrder() {
 		return Arrays.asList("retries", "statuses", "methods", "backoff.firstBackoff", "backoff.maxBackoff",
 				"backoff.factor", "backoff.basedOnPreviousValue");
 	}
 
+	/**
+	 * 创建重试过滤器。
+	 * @param retryConfig 重试配置
+	 * @return 网关过滤器实例
+	 */
 	@Override
 	public GatewayFilter apply(RetryConfig retryConfig) {
 		retryConfig.validate();
 
+		// 基于状态码的重试
 		Repeat<ServerWebExchange> statusCodeRepeat = null;
 		if (!retryConfig.getStatuses().isEmpty() || !retryConfig.getSeries().isEmpty()) {
 			Predicate<RepeatContext<ServerWebExchange>> repeatPredicate = context -> {
@@ -88,9 +125,9 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 
 				boolean retryableStatusCode = retryConfig.getStatuses().contains(statusCode);
 
-				// null status code might mean a network exception?
+				// null 状态码可能意味着网络异常
 				if (!retryableStatusCode && statusCode != null) {
-					// try the series
+					// 尝试匹配状态码系列
 					retryableStatusCode = false;
 					for (int i = 0; i < retryConfig.getSeries().size(); i++) {
 						if (statusCode.series().equals(retryConfig.getSeries().get(i))) {
@@ -122,8 +159,9 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 			}
 		}
 
-		// TODO: support timeout, backoff, jitter, etc... in Builder
+		// TODO: 支持超时、退避、抖动等
 
+		// 基于异常的重试
 		Retry<ServerWebExchange> exceptionRetry = null;
 		if (!retryConfig.getExceptions().isEmpty()) {
 			Predicate<RetryContext<ServerWebExchange>> retryContextPredicate = context -> {
@@ -177,6 +215,9 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 		};
 	}
 
+	/**
+	 * 获取异常名称及根因。
+	 */
 	private String getExceptionNameWithCause(Throwable exception) {
 		if (exception != null) {
 			StringBuilder builder = new StringBuilder(exception.getClass().getName());
@@ -191,25 +232,32 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 		}
 	}
 
+	/**
+	 * 获取退避策略。
+	 */
 	private Backoff getBackoff(BackoffConfig backoff) {
 		return Backoff.exponential(backoff.firstBackoff, backoff.maxBackoff, backoff.factor,
 				backoff.basedOnPreviousValue);
 	}
 
+	/**
+	 * 检查是否超过最大重试次数。
+	 */
 	public boolean exceedsMaxIterations(ServerWebExchange exchange, RetryConfig retryConfig) {
 		Integer iteration = exchange.getAttribute(RETRY_ITERATION_KEY);
 
-		// TODO: deal with null iteration
+		// TODO: 处理 null iteration
 		boolean exceeds = iteration != null && iteration >= retryConfig.getRetries();
 		trace("exceedsMaxIterations %b, iteration %d, configured retries %d", () -> exceeds, () -> iteration,
 				retryConfig::getRetries);
 		return exceeds;
 	}
 
-	@Deprecated
 	/**
-	 * Use {@link ServerWebExchangeUtils#reset(ServerWebExchange)}
+	 * 重置交换对象状态，准备下次重试。
+	 * @deprecated 使用 {@link ServerWebExchangeUtils#reset(ServerWebExchange)}
 	 */
+	@Deprecated
 	public void reset(ServerWebExchange exchange) {
 		Connection conn = exchange.getAttribute(ServerWebExchangeUtils.CLIENT_RESPONSE_CONN_ATTR);
 		if (conn != null) {
@@ -220,28 +268,33 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 		ServerWebExchangeUtils.reset(exchange);
 	}
 
+	/**
+	 * 创建重试过滤器。
+	 * @param routeId 路由 ID
+	 * @param repeat 状态码重复策略
+	 * @param retry 异常重试策略
+	 * @return 网关过滤器实例
+	 */
 	public GatewayFilter apply(String routeId, Repeat<ServerWebExchange> repeat, Retry<ServerWebExchange> retry) {
 		if (routeId != null && getPublisher() != null) {
-			// send an event to enable caching
+			// 发送事件以启用请求体缓存
 			getPublisher().publishEvent(new EnableBodyCachingEvent(this, routeId));
 		}
 		return (exchange, chain) -> {
 			trace("Entering retry-filter");
 
-			// chain.filter returns a Mono<Void>
+			// chain.filter 返回 Mono<Void>
 			Publisher<Void> publisher = chain.filter(exchange)
 					// .log("retry-filter", Level.INFO)
 					.doOnSuccess(aVoid -> updateIteration(exchange)).doOnError(throwable -> updateIteration(exchange));
 
 			if (retry != null) {
-				// retryWhen returns a Mono<Void>
-				// retry needs to go before repeat
+				// retryWhen 返回 Mono<Void>，重试需要在重复之前
 				publisher = ((Mono<Void>) publisher)
 						.retryWhen(reactor.util.retry.Retry.withThrowable(retry.withApplicationContext(exchange)));
 			}
 			if (repeat != null) {
-				// repeatWhen returns a Flux<Void>
-				// so this needs to be last and the variable a Publisher<Void>
+				// repeatWhen 返回 Flux<Void>，所以这需要在最后
 				publisher = ((Mono<Void>) publisher).repeatWhen(repeat.withApplicationContext(exchange));
 			}
 
@@ -249,6 +302,9 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 		};
 	}
 
+	/**
+	 * 更新重试迭代次数。
+	 */
 	private void updateIteration(ServerWebExchange exchange) {
 		int iteration = exchange.getAttributeOrDefault(RETRY_ITERATION_KEY, -1);
 		int newIteration = iteration + 1;
@@ -256,6 +312,9 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 		exchange.getAttributes().put(RETRY_ITERATION_KEY, newIteration);
 	}
 
+	/**
+	 * 追踪日志。
+	 */
 	@SafeVarargs
 	private final void trace(String message, Supplier<Object>... argSuppliers) {
 		if (log.isTraceEnabled()) {
@@ -269,27 +328,42 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 		}
 	}
 
+	/**
+	 * 重试配置类。
+	 */
 	@SuppressWarnings("unchecked")
 	public static class RetryConfig implements HasRouteId {
 
 		private String routeId;
 
+		/** 最大重试次数，默认 3 */
 		private int retries = 3;
 
+		/** 需要重试的状态码系列，默认 SERVER_ERROR */
 		private List<Series> series = toList(Series.SERVER_ERROR);
 
+		/** 需要重试的状态码列表 */
 		private List<HttpStatus> statuses = new ArrayList<>();
 
+		/** 需要重试的 HTTP 方法，默认 GET */
 		private List<HttpMethod> methods = toList(HttpMethod.GET);
 
+		/** 需要重试的异常类型，默认 IOException、TimeoutException */
 		private List<Class<? extends Throwable>> exceptions = toList(IOException.class, TimeoutException.class);
 
+		/** 退避策略配置 */
 		private BackoffConfig backoff;
 
+		/**
+		 * 设置所有 HTTP 方法都进行重试。
+		 */
 		public RetryConfig allMethods() {
 			return setMethods(HttpMethod.values());
 		}
 
+		/**
+		 * 验证配置。
+		 */
 		public void validate() {
 			Assert.isTrue(this.retries > 0, "retries must be greater than 0");
 			Assert.isTrue(!this.series.isEmpty() || !this.statuses.isEmpty() || !this.exceptions.isEmpty(),
@@ -372,14 +446,21 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
 
 	}
 
+	/**
+	 * 退避策略配置类。
+	 */
 	public static class BackoffConfig {
 
+		/** 首次退避时间，默认 5ms */
 		private Duration firstBackoff = Duration.ofMillis(5);
 
+		/** 最大退避时间 */
 		private Duration maxBackoff;
 
+		/** 退避倍数，默认 2 */
 		private int factor = 2;
 
+		/** 是否基于前一次退避值计算 */
 		private boolean basedOnPreviousValue = true;
 
 		public BackoffConfig() {

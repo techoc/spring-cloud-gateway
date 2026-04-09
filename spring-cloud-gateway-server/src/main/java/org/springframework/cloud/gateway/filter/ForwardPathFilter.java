@@ -28,13 +28,26 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.isAlreadyRouted;
 
 /**
- * Filter to set the path in the request URI if the {@link Route} URI has the scheme
- * <code>forward</code>.
+ * Forward 协议路径过滤器。
+ * <p>
+ * 当路由 URI 使用 {@code forward} 协议（如 {@code forward:/path}）时， 该过滤器负责将请求 URI 的路径部分替换为路由 URI
+ * 中指定的路径， 以便后续的 {@link ForwardRoutingFilter} 能将请求正确转发到本地服务端点。
+ * <p>
+ * 执行顺序为 0，在大多数路由过滤器之前执行，但仅对 {@code forward} 协议有效。
  *
  * @author Ryan Baxter
  */
 public class ForwardPathFilter implements GlobalFilter, Ordered {
 
+	/**
+	 * 过滤请求，若路由使用 {@code forward} 协议，则将请求路径更新为路由 URI 中的路径。
+	 * <p>
+	 * 若请求已被路由处理（{@code isAlreadyRouted} 为 true）或路由协议不是 {@code forward}，
+	 * 则直接将请求传递给过滤器链的下一个过滤器。
+	 * @param exchange 当前服务器 Web 交换对象
+	 * @param chain 过滤器链
+	 * @return {@code Mono<Void>}，表示请求处理完成的信号
+	 */
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 		Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
@@ -47,6 +60,10 @@ public class ForwardPathFilter implements GlobalFilter, Ordered {
 		return chain.filter(exchange);
 	}
 
+	/**
+	 * 返回过滤器执行顺序。
+	 * @return 执行顺序，值为 0
+	 */
 	@Override
 	public int getOrder() {
 		return 0;

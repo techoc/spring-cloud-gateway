@@ -49,10 +49,10 @@ import org.springframework.web.reactive.function.client.WebClient.RequestBodySpe
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * 一个可以在 <code>@RequestMapping</code> 方法中作为参数使用的代理交换类，能够将请求转发到后端服务。
- * Spring 会自动将该类的实例注入到你的 MVC 处理器方法中，你可以通过调用 {@link #get()}、
- * {@link #post()}、{@link #put()}、{@link #patch()}、{@link #delete()} 等 HTTP 方法
- * 来返回一个 <code>ResponseEntity</code>。示例：
+ * 一个可以在 <code>@RequestMapping</code> 方法中作为参数使用的代理交换类，能够将请求转发到后端服务。 Spring 会自动将该类的实例注入到你的
+ * MVC 处理器方法中，你可以通过调用 {@link #get()}、
+ * {@link #post()}、{@link #put()}、{@link #patch()}、{@link #delete()} 等 HTTP 方法 来返回一个
+ * <code>ResponseEntity</code>。示例：
  *
  * <pre>
  * &#64;GetMapping("/proxy/{id}")
@@ -63,21 +63,18 @@ import org.springframework.web.server.ServerWebExchange;
  * </pre>
  *
  * <p>
- * 默认情况下，传入的请求体和请求头会原封不动地发送到下游服务（"敏感"请求头除外）。
- * 要操作下游请求，可以使用 {@link ProxyExchange} 中的"构建器"风格方法，
- * 但只有 {@link #uri(String)} 是必需的。你可以通过调用 {@link #sensitive(String...)} 方法
+ * 默认情况下，传入的请求体和请求头会原封不动地发送到下游服务（"敏感"请求头除外）。 要操作下游请求，可以使用 {@link ProxyExchange}
+ * 中的"构建器"风格方法， 但只有 {@link #uri(String)} 是必需的。你可以通过调用 {@link #sensitive(String...)} 方法
  * 来修改敏感请求头（Authorization 和 Cookie 默认就是敏感的）。
  * </p>
  * <p>
- * <code>ProxyExchange&lt;T&gt;</code> 中的类型参数 <code>T</code> 是响应体的类型，
- * 因此它会出现在你从 <code>@RequestMapping</code> 返回的 <code>ResponseEntity</code> 中。
- * 如果你不关心请求和响应体的类型（例如只是简单透传），那么可以使用通配符或 <code>byte[]</code>
- * （除非你提供转换器，否则 <code>Object</code> 可能无法工作）。
- * 如果你想要转换或操作响应，或者想要断言它可以转换为你声明的类型，请使用具体类型。
+ * <code>ProxyExchange&lt;T&gt;</code> 中的类型参数 <code>T</code> 是响应体的类型， 因此它会出现在你从
+ * <code>@RequestMapping</code> 返回的 <code>ResponseEntity</code> 中。
+ * 如果你不关心请求和响应体的类型（例如只是简单透传），那么可以使用通配符或 <code>byte[]</code> （除非你提供转换器，否则
+ * <code>Object</code> 可能无法工作）。 如果你想要转换或操作响应，或者想要断言它可以转换为你声明的类型，请使用具体类型。
  * </p>
  * <p>
- * 要操作响应，可以使用带有 <code>Function</code> 参数的重载 HTTP 方法，
- * 并传入代码来转换响应。例如：
+ * 要操作响应，可以使用带有 <code>Function</code> 参数的重载 HTTP 方法， 并传入代码来转换响应。例如：
  *
  * <pre>
  * &#64;PostMapping("/proxy")
@@ -94,10 +91,10 @@ import org.springframework.web.server.ServerWebExchange;
  *
  * </p>
  * <p>
- * Spring 的 {@link HttpMessageConverter 消息转换器}的完整机制会应用于
- * 传入的请求和响应以及后端请求。如果你需要额外的转换器，
- * 那么它们需要在 MVC 配置的上游添加，同时也需要添加到用于后端调用的 {@link WebClient} 中
- * （详见 {@link ProxyExchange#ProxyExchange(WebClient, ServerWebExchange, BindingContext, Type) 构造函数}）。
+ * Spring 的 {@link HttpMessageConverter 消息转换器}的完整机制会应用于 传入的请求和响应以及后端请求。如果你需要额外的转换器，
+ * 那么它们需要在 MVC 配置的上游添加，同时也需要添加到用于后端调用的 {@link WebClient} 中 （详见
+ * {@link ProxyExchange#ProxyExchange(WebClient, ServerWebExchange, BindingContext, Type)
+ * 构造函数}）。
  * </p>
  *
  * @author Dave Syer
@@ -106,8 +103,7 @@ import org.springframework.web.server.ServerWebExchange;
 public class ProxyExchange<T> {
 
 	/**
-	 * 默认情况下被认为是敏感的请求头名称集合。
-	 * 这些请求头（如 cookie、authorization）默认不会被转发到下游服务。
+	 * 默认情况下被认为是敏感的请求头名称集合。 这些请求头（如 cookie、authorization）默认不会被转发到下游服务。
 	 */
 	public static Set<String> DEFAULT_SENSITIVE = Collections
 			.unmodifiableSet(new HashSet<>(Arrays.asList("cookie", "authorization")));
@@ -187,9 +183,7 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * 为下游调用设置请求头。
-	 * 该方法允许自定义要转发到后端服务的 HTTP 请求头信息。
-	 *
+	 * 为下游调用设置请求头。 该方法允许自定义要转发到后端服务的 HTTP 请求头信息。
 	 * @param name 请求头名称
 	 * @param value 请求头值，支持多个值
 	 * @return 当前 ProxyExchange 实例，便于链式调用
@@ -399,8 +393,7 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * 根据当前请求的 HTTP 方法自动转发请求。
-	 * 该方法会根据原始的 HTTP 方法（GET、POST、PUT 等）自动选择对应的代理方法。
+	 * 根据当前请求的 HTTP 方法自动转发请求。 该方法会根据原始的 HTTP 方法（GET、POST、PUT 等）自动选择对应的代理方法。
 	 * @return 包含响应数据的 Mono 对象
 	 */
 	public Mono<ResponseEntity<T>> forward() {
@@ -578,8 +571,7 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * 获取请求体。如果已经设置了请求体则直接返回，
-	 * 否则尝试从请求体绑定上下文中获取。
+	 * 获取请求体。如果已经设置了请求体则直接返回， 否则尝试从请求体绑定上下文中获取。
 	 * @return 请求体发布者
 	 */
 	private Publisher<?> body() {
@@ -593,8 +585,8 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * 搜索是否已经使用 <code>@RequestBody</code> 反序列化的请求体。
-	 * 如果未找到，则以与 <code>@RequestBody</code> 相同的方式进行反序列化。
+	 * 搜索是否已经使用 <code>@RequestBody</code> 反序列化的请求体。 如果未找到，则以与 <code>@RequestBody</code>
+	 * 相同的方式进行反序列化。
 	 * @return 请求体对象
 	 */
 	private Mono<Object> getRequestBody() {

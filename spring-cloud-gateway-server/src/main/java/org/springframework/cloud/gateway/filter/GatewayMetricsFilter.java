@@ -32,6 +32,15 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 网关监控指标过滤器。
+ * <p>
+ * 该全局过滤器集成 Micrometer，用于采集每个请求的处理耗时，并以 Timer 指标的形式 上报到
+ * {@link MeterRegistry}。指标名称由可配置的前缀加上 {@code ".requests"} 组成， 并附带由
+ * {@link GatewayTagsProvider} 提供的多维度标签（如路由 ID、HTTP 方法、响应状态等）。
+ * <p>
+ * 执行顺序为 {@link NettyWriteResponseFilter#WRITE_RESPONSE_FILTER_ORDER} + 1，
+ * 确保在写响应之前尽早启动计时器，并在响应提交前记录指标。
+ *
  * @author Tony Clarke
  * @author Ingyu Hwang
  */
@@ -39,12 +48,21 @@ public class GatewayMetricsFilter implements GlobalFilter, Ordered {
 
 	private static final Log log = LogFactory.getLog(GatewayMetricsFilter.class);
 
+	/** Micrometer 指标注册表，用于记录 Timer 等监控指标 */
 	private final MeterRegistry meterRegistry;
 
+	/** 组合的标签提供者，将多个 GatewayTagsProvider 合并为一个 */
 	private GatewayTagsProvider compositeTagsProvider;
 
+	/** 指标名称前缀，最终指标名为 "{metricsPrefix}.requests" */
 	private final String metricsPrefix;
 
+	/**
+	 * 构造网关监控指标过滤器。
+	 * @param meterRegistry Micrometer 指标注册表
+	 * @param tagsProviders 标签提供者列表，用于为请求指标附加多维度标签
+	 * @param metricsPrefix 指标名称前缀（若以 "." 结尾会自动去除）
+	 */
 	public GatewayMetricsFilter(MeterRegistry meterRegistry, List<GatewayTagsProvider> tagsProviders,
 			String metricsPrefix) {
 		this.meterRegistry = meterRegistry;
@@ -57,17 +75,35 @@ public class GatewayMetricsFilter implements GlobalFilter, Ordered {
 		}
 	}
 
+	/**
+	 * 获取指标名称前缀。
+	 * @return 指标名称前缀字符串
+	 */
 	public String getMetricsPrefix() {
 		return metricsPrefix;
 	}
 
+	/**
+	 * 返回过滤器执行顺序。
+	 * <p>
+	 * 执行顺序设置为 {@link NettyWriteResponseFilter#WRITE_RESPONSE_FILTER_ORDER} + 1，
+	 * 确保计时器尽早启动并在写响应前完成指标记录。
+	 * @return 过滤器执行顺序值
+	 */
 	@Override
 	public int getOrder() {
-		// start the timer as soon as possible and report the metric event before we write
-		// response to client
+		// 尽早启动计时器，并在向客户端写响应之前上报指标
 		return NettyWriteResponseFilter.WRITE_RESPONSE_FILTER_ORDER + 1;
 	}
 
+	/**
+	 * 过滤请求，记录请求处理耗时指标。
+	 * <p>
+	 * 在请求开始时启动 Timer 采样，在请求成功或失败时停止采样并上报指标。 指标上报尊重响应提交状态：若响应已提交则立即上报，否则注册提交前回调。
+	 * @param exchange 当前服务器 Web 交换对象
+	 * @param chain 过滤器链
+	 * @return {@code Mono<Void>}，表示请求处理完成的信号
+	 */
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 		Sample sample = Timer.start(meterRegistry);
@@ -76,6 +112,13 @@ public class GatewayMetricsFilter implements GlobalFilter, Ordered {
 				.doOnError(throwable -> endTimerRespectingCommit(exchange, sample));
 	}
 
+	/**
+	 * 尊重响应提交状态地停止计时器。
+	 * <p>
+	 * 若响应已提交，直接调用计时器终止逻辑；否则注册响应提交前回调，确保在提交时记录指标。
+	 * @param exchange 当前服务器 Web 交换对象
+	 * @param sample 计时器采样对象
+	 */
 	private void endTimerRespectingCommit(ServerWebExchange exchange, Sample sample) {
 
 		ServerHttpResponse response = exchange.getResponse();
@@ -90,6 +133,13 @@ public class GatewayMetricsFilter implements GlobalFilter, Ordered {
 		}
 	}
 
+	/**
+	 * 实际停止计时器并上报指标。
+	 * <p>
+	 * 从复合标签提供者获取标签，并将 Timer 样本记录到指标注册表。
+	 * @param exchange 当前服务器 Web 交换对象，用于生成指标标签
+	 * @param sample 待停止的计时器采样对象
+	 */
 	private void endTimerInner(ServerWebExchange exchange, Sample sample) {
 		Tags tags = compositeTagsProvider.apply(exchange);
 

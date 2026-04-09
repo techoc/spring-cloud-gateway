@@ -49,8 +49,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author Spencer Gibb
+ * TokenRelayGatewayFilterFactory 单元测试类
  *
+ * 本测试类用于验证 TokenRelayGatewayFilterFactory 的 OAuth2 Token 转发功能，包括： - 测试无认证主体时不添加
+ * Authorization 头 - 测试有 OAuth2 认证主体时添加 Bearer Token - 测试非 OAuth2 认证主体时不添加 Authorization 头
+ *
+ * TokenRelayGatewayFilterFactory 负责将 OAuth2 认证令牌转发到后端服务， 实现基于 OAuth2 的单点登录（SSO）场景中的令牌传递。
+ *
+ * @author Spencer Gibb
+ * @author 译者：Spring Cloud Gateway 团队
  */
 public class TokenRelayGatewayFilterFactoryTests {
 
@@ -87,12 +94,18 @@ public class TokenRelayGatewayFilterFactoryTests {
 	public void after() {
 	}
 
+	/**
+	 * 测试无认证主体时不添加 Authorization 头 验证：请求头中不应包含 Authorization
+	 */
 	@Test
 	public void emptyPrincipal() {
 		filter.filter(mockExchange, filterChain).block(TIMEOUT);
 		assertThat(request.getHeaders()).doesNotContainKeys(HttpHeaders.AUTHORIZATION);
 	}
 
+	/**
+	 * 测试有 OAuth2 认证主体时添加 Bearer Token 验证：请求头应包含 Authorization: Bearer mytoken
+	 */
 	@Test
 	public void whenPrincipalExistsAuthorizationHeaderAdded() {
 		OAuth2AccessToken accessToken = mock(OAuth2AccessToken.class);
@@ -118,6 +131,10 @@ public class TokenRelayGatewayFilterFactoryTests {
 				Collections.singletonList("Bearer mytoken"));
 	}
 
+	/**
+	 * 测试非 OAuth2 认证主体时不添加 Authorization 头 验证：对于非 OAuth2 的认证类型（如
+	 * TestingAuthenticationToken），不应转发 Token
+	 */
 	@Test
 	public void principalIsNotOAuth2AuthenticationToken() {
 		SecurityContextImpl securityContext = new SecurityContextImpl(new TestingAuthenticationToken("my", null));

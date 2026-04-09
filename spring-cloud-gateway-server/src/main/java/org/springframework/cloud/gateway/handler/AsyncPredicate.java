@@ -29,7 +29,36 @@ import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 异步断言接口，用于在 Spring Cloud Gateway 中进行异步条件判断。
+ *
+ * <p>
+ * AsyncPredicate 是响应式网关断言的核心接口，继承自 {@link Function} 和 {@link HasConfig}。 与同步的
+ * {@link Predicate} 不同，它返回 {@link Publisher}&lt;Boolean&gt;，支持响应式编程模型。
+ * </p>
+ *
+ * <p>
+ * <b>核心功能：</b>
+ * </p>
+ * <ul>
+ * <li>支持异步条件判断，适用于需要异步IO操作的场景</li>
+ * <li>提供逻辑组合操作（and、or、negate）</li>
+ * <li>支持访问者模式，用于断言的遍历和处理</li>
+ * </ul>
+ *
+ * <p>
+ * <b>使用示例：</b>
+ * </p>
+ * <pre>{@code
+ * // 从同步 Predicate 转换为异步断言
+ * AsyncPredicate<ServerWebExchange> asyncPredicate = AsyncPredicate.from(exchange -> true);
+ *
+ * // 组合多个断言
+ * AsyncPredicate<ServerWebExchange> combined = predicate1.and(predicate2);
+ * }</pre>
+ *
  * @author Ben Hale
+ * @see GatewayPredicate
+ * @see java.util.function.Predicate
  */
 public interface AsyncPredicate<T> extends Function<T, Publisher<Boolean>>, HasConfig {
 
@@ -85,8 +114,18 @@ public interface AsyncPredicate<T> extends Function<T, Publisher<Boolean>>, HasC
 
 	}
 
+	/**
+	 * 取反的异步断言。
+	 *
+	 * <p>
+	 * 将当前断言的结果取反后返回。 如果原断言返回 true，则此断言返回 false；反之亦然。
+	 * </p>
+	 *
+	 * @param <T> 断言输入类型
+	 */
 	class NegateAsyncPredicate<T> implements AsyncPredicate<T> {
 
+		/** 要取反的原始断言 */
 		private final AsyncPredicate<? super T> predicate;
 
 		public NegateAsyncPredicate(AsyncPredicate<? super T> predicate) {

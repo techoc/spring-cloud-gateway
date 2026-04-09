@@ -21,9 +21,10 @@ import reactor.core.publisher.Mono;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * Contract to allow a {@link GatewayFilter} to delegate to the next in the chain.
- *
- * Copied from framework WebFilterChain
+ * 网关过滤器链接口，允许 {@link GatewayFilter} 将请求委托给链中的下一个过滤器。
+ * <p>
+ * 参照 Spring Framework 的 WebFilterChain 设计，该接口是 Gateway 过滤器链式调用的核心契约。
+ * 当一个过滤器完成处理后，可通过调用此接口的 {@code filter} 方法将控制权传递给后续过滤器。
  *
  * @author Rossen Stoyanchev
  * @since 5.0
@@ -31,9 +32,9 @@ import org.springframework.web.server.ServerWebExchange;
 public interface GatewayFilterChain {
 
 	/**
-	 * Delegate to the next {@code GatewayFilter} in the chain.
-	 * @param exchange the current server exchange
-	 * @return {@code Mono<Void>} to indicate when request handling is complete
+	 * 将请求委托给链中的下一个 {@link GatewayFilter} 进行处理。
+	 * @param exchange 当前服务器 Web 交换对象，包含请求和响应信息
+	 * @return {@code Mono<Void>}，表示请求处理完成的信号
 	 */
 	Mono<Void> filter(ServerWebExchange exchange);
 

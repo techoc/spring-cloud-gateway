@@ -29,25 +29,47 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 
 /**
+ * 移除请求头过滤器工厂。
+ * <p>
+ * 该过滤器在请求转发前移除指定的 HTTP 请求头。
+ * <p>
+ * 配置示例（YAML）： <pre>
+ * filters:
+ *   - RemoveRequestHeader=X-Remove-Header
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class RemoveRequestHeaderGatewayFilterFactory
 		extends AbstractGatewayFilterFactory<AbstractGatewayFilterFactory.NameConfig> {
 
+	/**
+	 * 默认构造方法。
+	 */
 	public RemoveRequestHeaderGatewayFilterFactory() {
 		super(NameConfig.class);
 	}
 
+	/**
+	 * 返回快捷字段顺序。
+	 * @return 字段顺序列表
+	 */
 	@Override
 	public List<String> shortcutFieldOrder() {
 		return Arrays.asList(NAME_KEY);
 	}
 
+	/**
+	 * 创建移除请求头过滤器。
+	 * @param config 名称配置
+	 * @return 网关过滤器实例
+	 */
 	@Override
 	public GatewayFilter apply(NameConfig config) {
 		return new GatewayFilter() {
 			@Override
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+				// 创建新请求，移除指定的请求头
 				ServerHttpRequest request = exchange.getRequest().mutate()
 						.headers(httpHeaders -> httpHeaders.remove(config.getName())).build();
 

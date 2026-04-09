@@ -18,13 +18,20 @@ package org.springframework.cloud.gateway.config;
 
 import reactor.netty.http.client.HttpClient;
 
+/**
+ * HttpClient 自定义器接口，用于自定义和扩展 HttpClient 的配置。
+ * <p>
+ * 实现此接口可以对网关使用的 HTTP 客户端进行个性化配置，如添加拦截器、修改连接参数等。
+ *
+ * @author Spencer Gibb
+ */
 @FunctionalInterface
 public interface HttpClientCustomizer {
 
 	/**
-	 * Customize the specified {@link HttpClient}.
-	 * @param httpClient the http client to customize.
-	 * @return the customized HttpClient.
+	 * 自定义指定的 {@link HttpClient}。
+	 * @param httpClient 需要自定义的 HTTP 客户端
+	 * @return 自定义后的 HttpClient 实例
 	 */
 	HttpClient customize(HttpClient httpClient);
 

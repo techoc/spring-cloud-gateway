@@ -25,6 +25,16 @@ import java.lang.annotation.Target;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Conditional;
 
+/**
+ * 条件化注解，用于根据配置属性控制全局过滤器 Bean 的注册。
+ * <p>
+ * 当指定全局过滤器对应的配置属性 {@code spring.cloud.gateway.global-filter.<filter-name>.enabled} 不为
+ * {@code false} 时， 标注的 Bean 才会被注册到 Spring 容器中。
+ * <p>
+ * 该注解提供了一种机制，允许用户通过配置文件禁用不需要的全局过滤器， 从而在运行时控制哪些全局过滤器生效。
+ *
+ * @see OnEnabledGlobalFilter
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Documented
@@ -32,8 +42,10 @@ import org.springframework.context.annotation.Conditional;
 public @interface ConditionalOnEnabledGlobalFilter {
 
 	/**
-	 * The class component to check for.
-	 * @return the class that must be enabled
+	 * 要检查的全局过滤器类组件。
+	 * <p>
+	 * 指定需要检查启用状态的 {@link GlobalFilter} 实现类。 当未指定值时，将根据标注方法的返回类型自动推断。
+	 * @return 必须启用才能注册 Bean 的全局过滤器类
 	 */
 	Class<? extends GlobalFilter> value() default OnEnabledGlobalFilter.DefaultValue.class;
 

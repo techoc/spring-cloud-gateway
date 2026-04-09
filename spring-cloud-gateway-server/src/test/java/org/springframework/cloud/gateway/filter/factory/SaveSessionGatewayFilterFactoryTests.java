@@ -43,7 +43,15 @@ import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 /**
+ * SaveSessionGatewayFilterFactory 集成测试类
+ *
+ * 本测试类用于验证 SaveSessionGatewayFilterFactory 的会话保存功能，包括： - 测试 Web 请求触发会话保存操作 - 测试 toString
+ * 格式输出
+ *
+ * SaveSessionGatewayFilterFactory 负责强制保存 Web 会话， 确保在请求转发前将会话状态持久化到会话存储中。
+ *
  * @author Greg Turnquist
+ * @author 译者：Spring Cloud Gateway 团队
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
@@ -52,6 +60,9 @@ public class SaveSessionGatewayFilterFactoryTests extends BaseWebClientTests {
 
 	static WebSession mockWebSession = mock(WebSession.class);
 
+	/**
+	 * 测试 Web 请求应触发会话保存操作 验证：模拟的 WebSession.save() 方法应被调用
+	 */
 	@Test
 	public void webCallShouldTriggerWebSessionSaveAction() {
 
@@ -67,12 +78,20 @@ public class SaveSessionGatewayFilterFactoryTests extends BaseWebClientTests {
 		verify(mockWebSession).save();
 	}
 
+	/**
+	 * 测试过滤器的 toString 格式输出 验证：toString 应包含 SaveSession
+	 */
 	@Test
 	public void toStringFormat() {
 		GatewayFilter filter = new SaveSessionGatewayFilterFactory().apply("");
 		assertThat(filter.toString()).contains("SaveSession");
 	}
 
+	/**
+	 * 测试配置类
+	 *
+	 * 提供模拟的 WebSessionManager bean，用于测试
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@Import(DefaultTestConfig.class)

@@ -25,8 +25,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 
 /**
- * This is useful for PreFlight CORS requests. We can add a "global" configuration here so
- * we don't have to modify existing predicates to allow the "options" HTTP method.
+ * SimpleUrlHandlerMapping 全局 CORS 自动配置类。
+ * <p>
+ * 此配置用于处理 CORS 预检请求（PreFlight Request）。通过在此处添加全局配置， 无需修改现有的路由谓词即可允许 "OPTIONS" HTTP
+ * 方法，从而支持跨域请求。
+ * <p>
+ * 当类路径中存在 {@link SimpleUrlHandlerMapping} 且配置项
+ * {@code spring.cloud.gateway.globalcors.add-to-simple-url-handler-mapping} 为 true 时生效。
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(SimpleUrlHandlerMapping.class)
@@ -34,12 +39,23 @@ import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 		matchIfMissing = false)
 public class SimpleUrlHandlerMappingGlobalCorsAutoConfiguration {
 
+	/**
+	 * 全局 CORS 属性配置，包含跨域请求的全局配置信息。
+	 */
 	@Autowired
 	private GlobalCorsProperties globalCorsProperties;
 
+	/**
+	 * Spring WebFlux 的简单 URL 处理器映射，用于处理静态资源请求。
+	 */
 	@Autowired
 	private SimpleUrlHandlerMapping simpleUrlHandlerMapping;
 
+	/**
+	 * 配置 CORS 跨域配置。
+	 * <p>
+	 * 在容器初始化完成后，将全局 CORS 配置应用到 SimpleUrlHandlerMapping 中， 使其能够处理所有路径的跨域预检请求。
+	 */
 	@PostConstruct
 	void config() {
 		simpleUrlHandlerMapping.setCorsConfigurations(globalCorsProperties.getCorsConfigurations());

@@ -49,9 +49,15 @@ import org.springframework.web.server.WebFilterChain;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 /**
- * Bug #1459: WeightCalculatorWebFilter is not thread safe
+ * WeightCalculatorWebFilter 线程安全测试类
+ *
+ * Bug #1459: WeightCalculatorWebFilter 不是线程安全的
+ *
+ * 本测试类用于验证 WeightCalculatorWebFilter 在并发场景下的线程安全性： - 测试在多个线程同时发布权重配置事件时，过滤器能否正确处理 -
+ * 通过模拟持续发布 WeightDefinedEvent 事件并调用过滤器， 验证在并发环境下不会出现数据竞争或不一致状态
  *
  * @author Alexey Nakidkin
+ * @author 译者：Spring Cloud Gateway 团队
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -83,6 +89,12 @@ public class WeightCalculatorWebFilterConcurrentTests {
 		executorService.shutdown();
 	}
 
+	/**
+	 * 测试 WeightCalculatorWebFilter 的线程安全性
+	 *
+	 * 此测试在固定时间窗口内持续发布权重事件并调用过滤器， 验证并发场景下不会出现线程安全问题。 注意：此测试目前被忽略，需要在 Spring 6 中修改实现以支持 JDK
+	 * 17 测试。
+	 */
 	@Test
 	@Ignore
 	public void WeightCalculatorWebFilter_threadSafeTest() {
@@ -96,10 +108,17 @@ public class WeightCalculatorWebFilterConcurrentTests {
 		}
 	}
 
+	/**
+	 * 判断测试是否应继续执行
+	 * @return 如果当前时间未超过最大测试时间则返回 true
+	 */
 	private boolean isContinue() {
 		return (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(maxTestTimeSeconds);
 	}
 
+	/**
+	 * 在后台线程中持续发布权重定义事件
+	 */
 	private void generateEvents() {
 		executorService.execute(() -> {
 			while (isContinue()) {
@@ -108,6 +127,10 @@ public class WeightCalculatorWebFilterConcurrentTests {
 		});
 	}
 
+	/**
+	 * 创建随机的权重定义事件
+	 * @return WeightDefinedEvent 实例
+	 */
 	private WeightDefinedEvent createWeightDefinedEvent() {
 		int weight = ThreadLocalRandom.current().nextInt() & Integer.MAX_VALUE;
 		WeightConfig config = new WeightConfig("group_1", UUID.randomUUID().toString(), weight);

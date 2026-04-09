@@ -26,27 +26,71 @@ import javax.validation.constraints.NotNull;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 时间后置断言工厂 - 匹配在指定时间之后发生的请求。
+ *
+ * <p>
+ * 该断言工厂用于匹配在配置的时间点之后发生的请求。 常用于计划维护窗口、限时服务、A/B测试等场景。
+ * </p>
+ *
+ * <p>
+ * <b>功能说明：</b>
+ * </p>
+ * <ul>
+ * <li>当请求时间晚于配置的时间点时，断言匹配成功</li>
+ * <li>支持时区的 ZonedDateTime 类型</li>
+ * <li>时间点使用 ISO-8601 格式</li>
+ * </ul>
+ *
+ * <p>
+ * <b>配置示例：</b>
+ * </p>
+ * <pre>{@code
+ * # YAML 配置方式
+ * - id: after_route
+ *   uri: https://example.org
+ *   predicates:
+ *   - After=2024-01-01T00:00:00+08:00[Asia/Shanghai]
+ * }</pre>
+ *
  * @author Spencer Gibb
+ * @see AbstractRoutePredicateFactory
  */
 public class AfterRoutePredicateFactory extends AbstractRoutePredicateFactory<AfterRoutePredicateFactory.Config> {
 
 	/**
-	 * DateTime key.
+	 * 配置键：datetime，指定时间点。
 	 */
 	public static final String DATETIME_KEY = "datetime";
 
+	/**
+	 * 构造函数，使用默认配置类。
+	 */
 	public AfterRoutePredicateFactory() {
 		super(Config.class);
 	}
 
+	/**
+	 * 返回快捷配置字段顺序，用于 YAML 简写配置解析。
+	 * @return 字段顺序列表
+	 */
 	@Override
 	public List<String> shortcutFieldOrder() {
 		return Collections.singletonList(DATETIME_KEY);
 	}
 
+	/**
+	 * 创建断言，检查当前时间是否在配置时间之后。
+	 * @param config 配置对象，包含目标时间点
+	 * @return 匹配的断言
+	 */
 	@Override
 	public Predicate<ServerWebExchange> apply(Config config) {
 		return new GatewayPredicate() {
+			/**
+			 * 测试请求是否在配置时间之后。
+			 * @param serverWebExchange 服务器 Web 交换对象
+			 * @return 如果当前时间晚于配置时间则返回 true
+			 */
 			@Override
 			public boolean test(ServerWebExchange serverWebExchange) {
 				final ZonedDateTime now = ZonedDateTime.now();
@@ -65,15 +109,27 @@ public class AfterRoutePredicateFactory extends AbstractRoutePredicateFactory<Af
 		};
 	}
 
+	/**
+	 * 配置类，定义 After 断言所需的配置参数。
+	 */
 	public static class Config {
 
+		/** 目标时间点（必须） */
 		@NotNull
 		private ZonedDateTime datetime;
 
+		/**
+		 * 获取配置的时间点。
+		 * @return 配置的 ZonedDateTime 对象
+		 */
 		public ZonedDateTime getDatetime() {
 			return datetime;
 		}
 
+		/**
+		 * 设置配置的时间点。
+		 * @param datetime 目标 ZonedDateTime 时间点
+		 */
 		public void setDatetime(ZonedDateTime datetime) {
 			this.datetime = datetime;
 		}

@@ -44,8 +44,21 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.P
 import static org.springframework.http.HttpHeaders.HOST;
 import static org.springframework.http.HttpHeaders.UPGRADE;
 
+/**
+ * WebsocketRoutingFilter 单元测试类
+ *
+ * 本测试类用于验证 WebsocketRoutingFilter 的 WebSocket 路由功能，包括： - 测试 WebSocket 协议解析功能 - 测试 HTTP 到
+ * WebSocket 协议的转换（http->ws, https->wss） - 测试编码 URL 的正确处理 - 测试请求头过滤器的行为 - 测试 Host 头保留功能
+ *
+ * WebsocketRoutingFilter 负责处理 WebSocket 升级请求， 将 HTTP/WebSocket 请求路由到后端服务。
+ *
+ * @author 译者：Spring Cloud Gateway 团队
+ */
 public class WebsocketRoutingFilterTests {
 
+	/**
+	 * 测试 WebSocket 协议解析功能 验证：多个空格分隔的协议名称应被正确解析和规范化
+	 */
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testProtocolParsing() {
@@ -59,6 +72,9 @@ public class WebsocketRoutingFilterTests {
 		assertThat(protocols).containsExactly("p1", "p2", "p3", "p4");
 	}
 
+	/**
+	 * 测试 HTTP 到 WebSocket 协议的转换 验证：http->ws, https->wss, tcp->tcp（不变）， 同时验证大小写不敏感性
+	 */
 	@Test
 	public void testConvertHttpToWs() {
 		assertThat(convertHttpToWs("http")).isEqualTo("ws");
@@ -68,6 +84,9 @@ public class WebsocketRoutingFilterTests {
 		assertThat(convertHttpToWs("tcp")).isEqualTo("tcp");
 	}
 
+	/**
+	 * 测试编码 URL 的正确处理 验证：包含编码空格（%20）的 WebSocket URL 应正确处理
+	 */
 	@Test
 	public void testEncodedUrl() {
 		MockServerHttpRequest request = MockServerHttpRequest.get("http://not-matters-that")
@@ -80,16 +99,26 @@ public class WebsocketRoutingFilterTests {
 		assertThat(wsRequestUrl).isEqualTo(URI.create("ws://microservice/my-service/websocket%20upgrade"));
 	}
 
+	/**
+	 * 测试默认的请求头过滤器行为 验证：非 WebSocket 特定的请求头应被保留，特定请求头应被移除
+	 */
 	@Test
 	public void testHeadersFilter() {
 		assertDefaultHeadersFilters(false);
 	}
 
+	/**
+	 * 测试保留 Host 请求头的过滤器行为 验证：当启用 Host 头保留时，Host 请求头应被保留
+	 */
 	@Test
 	public void testHeadersFilterPreserveHost() {
 		assertDefaultHeadersFilters(true);
 	}
 
+	/**
+	 * 验证默认请求头过滤器的行为
+	 * @param preserveHostHeader 是否保留 Host 请求头
+	 */
 	@SuppressWarnings("unchecked")
 	private void assertDefaultHeadersFilters(boolean preserveHostHeader) {
 		ObjectProvider<List<HttpHeadersFilter>> headersFilters = mock(ObjectProvider.class);

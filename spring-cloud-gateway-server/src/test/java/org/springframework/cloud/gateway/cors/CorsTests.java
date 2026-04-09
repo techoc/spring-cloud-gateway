@@ -36,10 +36,24 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+/**
+ * CorsTests - CORS跨域资源共享测试类
+ *
+ * 本测试类验证Spring Cloud Gateway的CORS（跨域资源共享）功能： - 预检请求（OPTIONS方法）的CORS头部处理 - 实际跨域请求的CORS头部处理
+ * - Gateway正确返回CORS相关的响应头
+ *
+ * @author test
+ */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class CorsTests extends BaseWebClientTests {
 
+	/**
+	 * testPreFlightCorsRequest - 测试预检请求的CORS处理
+	 *
+	 * 验证OPTIONS方法的预检请求能够正确返回CORS响应头： - Access-Control-Allow-Origin: * -
+	 * Access-Control-Allow-Methods: GET - 预检请求不应返回响应体
+	 */
 	@Test
 	public void testPreFlightCorsRequest() {
 		ClientResponse clientResponse = webClient.options().uri("/abc/123/function").header("Origin", "domain.com")
@@ -56,6 +70,11 @@ public class CorsTests extends BaseWebClientTests {
 		assertThat(clientResponse.statusCode()).as("Pre Flight call failed.").isEqualTo(HttpStatus.OK);
 	}
 
+	/**
+	 * testCorsRequest - 测试实际跨域请求的CORS处理
+	 *
+	 * 验证GET请求携带Origin头时能够正确返回CORS响应头
+	 */
 	@Test
 	public void testCorsRequest() {
 		ResponseEntity<String> response = webClient.get().uri("/abc/123/function").header("Origin", "domain.com")
@@ -67,6 +86,11 @@ public class CorsTests extends BaseWebClientTests {
 		assertThat(response.getStatusCode()).as("CORS request failed.").isEqualTo(HttpStatus.OK);
 	}
 
+	/**
+	 * TestConfig - CORS测试配置类
+	 *
+	 * 提供测试所需的Spring Boot配置
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@Import(DefaultTestConfig.class)

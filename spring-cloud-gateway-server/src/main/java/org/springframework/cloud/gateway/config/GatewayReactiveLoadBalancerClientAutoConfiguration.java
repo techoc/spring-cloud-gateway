@@ -32,7 +32,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.DispatcherHandler;
 
 /**
- * AutoConfiguration for {@link ReactiveLoadBalancerClientFilter}.
+ * Gateway响应式负载均衡客户端自动配置类。
+ * <p>
+ * 负责自动配置 {@link ReactiveLoadBalancerClientFilter}， 使网关具备负载均衡能力，能够将请求分发到多个服务实例。
  *
  * @author Spencer Gibb
  * @author Olga Maciaszek-Sharma
@@ -43,6 +45,14 @@ import org.springframework.web.reactive.DispatcherHandler;
 @EnableConfigurationProperties(GatewayLoadBalancerProperties.class)
 public class GatewayReactiveLoadBalancerClientAutoConfiguration {
 
+	/**
+	 * 创建并配置负载均衡客户端过滤器。
+	 * <p>
+	 * 该过滤器负责在网关转发请求时进行负载均衡， 根据服务名称选择合适的服务实例。
+	 * @param clientFactory 负载均衡客户端工厂
+	 * @param properties 负载均衡配置属性
+	 * @return 响应式负载均衡客户端过滤器
+	 */
 	@Bean
 	@ConditionalOnBean(LoadBalancerClientFactory.class)
 	@ConditionalOnMissingBean(ReactiveLoadBalancerClientFilter.class)
@@ -52,6 +62,13 @@ public class GatewayReactiveLoadBalancerClientAutoConfiguration {
 		return new ReactiveLoadBalancerClientFilter(clientFactory, properties);
 	}
 
+	/**
+	 * 创建并配置负载均衡服务实例Cookie过滤器。
+	 * <p>
+	 * 该过滤器用于在Cookie中保存选中的服务实例信息， 实现会话粘滞（sticky session）功能。
+	 * @param loadBalancerClientFactory 负载均衡客户端工厂
+	 * @return 负载均衡服务实例Cookie过滤器
+	 */
 	@Bean
 	@ConditionalOnBean({ ReactiveLoadBalancerClientFilter.class, LoadBalancerClientFactory.class })
 	@ConditionalOnMissingBean

@@ -34,22 +34,48 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * DisableBuiltInPredicatesTests - 禁用内置路由谓词测试类
+ *
+ * 本测试类验证Gateway内置路由谓词的启用/禁用配置功能： - 默认情况下所有内置路由谓词都会被注册 - 可以通过属性禁用特定的路由谓词 -
+ * 可以通过属性禁用所有内置路由谓词
+ *
+ * 通过spring.cloud.gateway.predicate.{predicate-name}.enabled=false配置即可禁用对应谓词
+ *
+ * @author test
+ */
 @RunWith(Enclosed.class)
 public class DisableBuiltInPredicatesTests {
 
+	/**
+	 * Config - 基础测试配置类
+	 *
+	 * 提供最小化的Spring Boot配置用于测试
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	protected static class Config {
 
 	}
 
+	/**
+	 * RoutePredicateDefault - 测试默认路由谓词注册
+	 *
+	 * 验证在默认情况下，所有内置路由谓词都会被正确注册
+	 */
 	@RunWith(SpringRunner.class)
 	@SpringBootTest(classes = Config.class)
 	public static class RoutePredicateDefault {
 
+		/** 路由谓词工厂列表 */
 		@Autowired
 		private List<RoutePredicateFactory<?>> predicates;
 
+		/**
+		 * shouldInjectBuiltInPredicates - 验证内置路由谓词被注入
+		 *
+		 * 确认至少注册了13个内置路由谓词
+		 */
 		@Test
 		public void shouldInjectBuiltInPredicates() {
 			assertThat(predicates).hasSizeGreaterThanOrEqualTo(13);
@@ -57,15 +83,26 @@ public class DisableBuiltInPredicatesTests {
 
 	}
 
+	/**
+	 * DisableSpecificsPredicatesByProperty - 测试通过属性禁用特定路由谓词
+	 *
+	 * 验证可以通过属性禁用特定的路由谓词： - AfterRoutePredicateFactory - BeforeRoutePredicateFactory
+	 */
 	@RunWith(SpringRunner.class)
 	@SpringBootTest(classes = Config.class, properties = { "spring.cloud.gateway.predicate.after.enabled=false",
 			"spring.cloud.gateway.predicate.before.enabled=false" })
 	@ActiveProfiles("disable-components")
 	public static class DisableSpecificsPredicatesByProperty {
 
+		/** 路由谓词工厂列表 */
 		@Autowired
 		private List<RoutePredicateFactory<?>> predicates;
 
+		/**
+		 * shouldInjectOnlyEnabledBuiltInPredicates - 验证只注册了启用的路由谓词
+		 *
+		 * 确认predicates列表不为空，但其中不包含被禁用的谓词
+		 */
 		@Test
 		public void shouldInjectOnlyEnabledBuiltInPredicates() {
 			assertThat(predicates).hasSizeGreaterThan(0);
@@ -75,6 +112,11 @@ public class DisableBuiltInPredicatesTests {
 
 	}
 
+	/**
+	 * DisableAllPredicatesByProperty - 测试通过属性禁用所有路由谓词
+	 *
+	 * 验证可以通过配置禁用所有内置路由谓词
+	 */
 	@RunWith(SpringRunner.class)
 	@SpringBootTest(classes = Config.class, properties = { "spring.cloud.gateway.predicate.after.enabled=false",
 			"spring.cloud.gateway.predicate.before.enabled=false",
@@ -91,9 +133,15 @@ public class DisableBuiltInPredicatesTests {
 	@ActiveProfiles("disable-components")
 	public static class DisableAllPredicatesByProperty {
 
+		/** 路由谓词工厂列表（允许为null） */
 		@Autowired(required = false)
 		private List<RoutePredicateFactory<?>> predicates;
 
+		/**
+		 * shouldDisableAllBuiltInPredicates - 验证所有内置路由谓词被禁用
+		 *
+		 * 确认当所有内置路由谓词都被禁用时，predicates为null
+		 */
 		@Test
 		public void shouldDisableAllBuiltInPredicates() {
 			assertThat(predicates).isNull();

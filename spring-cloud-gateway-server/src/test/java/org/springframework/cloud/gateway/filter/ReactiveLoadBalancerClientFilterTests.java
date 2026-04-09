@@ -68,11 +68,19 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_SCHEME_PREFIX_ATTR;
 
 /**
- * Tests for {@link ReactiveLoadBalancerClientFilter}.
+ * ReactiveLoadBalancerClientFilter 单元测试类
+ *
+ * 本测试类用于验证 ReactiveLoadBalancerClientFilter 的负载均衡路由功能，包括： - 测试 lb:// 协议的识别和过滤逻辑 -
+ * 测试服务实例的发现和选择 - 测试请求 URL 的转换（lb:// -> http://） - 测试负载均衡器的生命周期回调（成功、失败、丢弃） -
+ * 测试安全上下文的协议转换（https -> http） - 测试请求提示（hint）参数传递
+ *
+ * ReactiveLoadBalancerClientFilter 是 Spring Cloud Gateway 的响应式负载均衡过滤器， 负责将 lb://
+ * 协议的请求转换为实际的 HTTP/HTTPS 请求，通过负载均衡器选择后端服务实例。
  *
  * @author Spencer Gibb
  * @author Tim Ysewyn
  * @author Olga Maciaszek-Sharma
+ * @author 译者：Spring Cloud Gateway 团队
  */
 @SuppressWarnings("UnassignedFluxMonoInstance")
 @ExtendWith(MockitoExtension.class)
@@ -100,6 +108,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/mypath").build());
 	}
 
+	/**
+	 * 测试当网关请求 URL 属性缺失时不应进行过滤 验证：过滤器应继续调用过滤器链，不与 LoadBalancer 交互
+	 */
 	@Test
 	void shouldNotFilterWhenGatewayRequestUrlIsMissing() {
 		filter.filter(exchange, chain);
@@ -109,6 +120,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		verifyNoInteractions(clientFactory);
 	}
 
+	/**
+	 * 测试当网关请求 URL 协议不是 lb 时不应进行过滤 验证：对于 http:// 协议的请求，过滤器应跳过负载均衡处理
+	 */
 	@Test
 	void shouldNotFilterWhenGatewayRequestUrlSchemeIsNotLb() {
 		URI uri = UriComponentsBuilder.fromUriString("http://myservice").build().toUri();
@@ -121,6 +135,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		verifyNoInteractions(clientFactory);
 	}
 
+	/**
+	 * 测试当找不到服务实例时应抛出 NotFoundException 验证：lb://myservice 在没有可用实例时应抛出异常
+	 */
 	@Test
 	void shouldThrowExceptionWhenNoServiceInstanceIsFound() {
 		when(clientFactory.getProperties(any())).thenReturn(loadBalancerProperties);
@@ -132,6 +149,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		});
 	}
 
+	/**
+	 * 测试标准的负载均衡过滤流程 验证：lb://myservice 应被转换为实际的 http://localhost:8080/mypath
+	 */
 	@SuppressWarnings("unchecked")
 	@Test
 	void shouldFilter() {
@@ -165,6 +185,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		verifyNoMoreInteractions(chain);
 	}
 
+	/**
+	 * 测试带查询参数的 lb:// 协议正常路径 验证：参数应正确传递到转换后的 URL
+	 */
 	@Test
 	void happyPath() {
 		when(clientFactory.getProperties(any())).thenReturn(loadBalancerProperties);
@@ -186,6 +209,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		assertThat(uri).hasScheme("http").hasHost("service1-host1");
 	}
 
+	/**
+	 * 测试已编码参数的负载均衡转换不会导致双重编码 验证：编码的查询参数应保持不变
+	 */
 	@Test
 	void encodedParameters() {
 		when(clientFactory.getProperties(any())).thenReturn(loadBalancerProperties);
@@ -230,6 +256,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		assertThat(uri.getRawQuery()).isEqualTo("a=b&c=d[]");
 	}
 
+	/**
+	 * 测试使用属性而非协议指定负载均衡前缀的场景 验证：ws://service1?a=b 在 GATEWAY_SCHEME_PREFIX_ATTR=lb 时应被正确处理
+	 */
 	@Test
 	void happyPathWithAttributeRatherThanScheme() {
 		when(clientFactory.getProperties(any())).thenReturn(loadBalancerProperties);
@@ -258,6 +287,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		verifyNoInteractions(clientFactory);
 	}
 
+	/**
+	 * 测试当启用 use404 且找不到服务实例时应返回 404 状态码 验证：NotFoundException 应包含 HttpStatus.NOT_FOUND 状态
+	 */
 	@Test
 	void shouldThrow4O4ExceptionWhenNoServiceInstanceIsFound() {
 		when(clientFactory.getProperties(any())).thenReturn(loadBalancerProperties);
@@ -278,6 +310,10 @@ class ReactiveLoadBalancerClientFilterTests {
 		}
 	}
 
+	/**
+	 * 测试安全上下文的协议覆盖功能 验证：对于 https://localhost:9999 的原始请求，即使服务实例不支持 HTTPS， 也应使用 http://
+	 * 协议（因为服务实例的 isSecure=false）
+	 */
 	@SuppressWarnings("unchecked")
 	@Test
 	void shouldOverrideSchemeUsingIsSecure() {
@@ -303,6 +339,9 @@ class ReactiveLoadBalancerClientFilterTests {
 		verifyNoMoreInteractions(chain);
 	}
 
+	/**
+	 * 测试请求应正确传递给负载均衡器，包括 hint 参数 验证：负载均衡器应收到包含 hint 和原始 URL 的请求
+	 */
 	@SuppressWarnings({ "rawtypes" })
 	@Test
 	void shouldPassRequestToLoadBalancer() {
@@ -330,6 +369,9 @@ class ReactiveLoadBalancerClientFilterTests {
 
 	}
 
+	/**
+	 * 测试负载均衡生命周期回调在成功时正确执行 验证：onStart、onStartRequest 和 onComplete（SUCCESS状态）回调应被调用
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	void loadBalancerLifecycleCallbacksExecutedForSuccess() {
@@ -350,6 +392,9 @@ class ReactiveLoadBalancerClientFilterTests {
 						((RequestDataContext) completionContext.getLoadBalancerRequest().getContext()).method())));
 	}
 
+	/**
+	 * 测试负载均衡生命周期回调在丢弃请求时正确执行 验证：onStart 和 onComplete（DISCARD 状态）回调应被调用
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	void loadBalancerLifecycleCallbacksExecutedForDiscard() {
@@ -367,6 +412,9 @@ class ReactiveLoadBalancerClientFilterTests {
 						((RequestDataContext) completionContext.getLoadBalancerRequest().getContext()).method())));
 	}
 
+	/**
+	 * 测试负载均衡生命周期回调在请求失败时正确执行 验证：onStart、onStartRequest 和 onComplete（FAILED状态）回调应被调用
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	void loadBalancerLifecycleCallbacksExecutedForFailed() {
@@ -386,6 +434,13 @@ class ReactiveLoadBalancerClientFilterTests {
 						((RequestDataContext) completionContext.getLoadBalancerRequest().getContext()).method())));
 	}
 
+	/**
+	 * 创建模拟的 ServerWebExchange 用于测试生命周期回调
+	 * @param serviceInstance 服务实例（可为 null）
+	 * @param lifecycleProcessor 负载均衡生命周期处理器
+	 * @param shouldThrowException 是否应抛出异常
+	 * @return 配置好的模拟 ServerWebExchange
+	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private ServerWebExchange mockExchange(ServiceInstance serviceInstance, LoadBalancerLifecycle lifecycleProcessor,
 			boolean shouldThrowException) {
@@ -418,16 +473,33 @@ class ReactiveLoadBalancerClientFilterTests {
 		return serverWebExchange;
 	}
 
+	/**
+	 * 构建负载均衡提示参数映射
+	 * @param hint 提示值
+	 * @return 包含默认提示的 Map
+	 */
 	private Map<String, String> buildHints(String hint) {
 		Map<String, String> hints = new HashMap<>();
 		hints.put("default", hint);
 		return hints;
 	}
 
+	/**
+	 * 执行过滤器测试的辅助方法
+	 * @param request 模拟的 HTTP 请求
+	 * @param uri 负载均衡 URI
+	 * @return 应用过滤器后的 ServerWebExchange
+	 */
 	private ServerWebExchange testFilter(MockServerHttpRequest request, URI uri) {
 		return testFilter(MockServerWebExchange.from(request), uri);
 	}
 
+	/**
+	 * 执行过滤器测试的辅助方法（重载版本）
+	 * @param exchange 模拟的 ServerWebExchange
+	 * @param uri 负载均衡 URI
+	 * @return 应用过滤器后的 ServerWebExchange
+	 */
 	private ServerWebExchange testFilter(ServerWebExchange exchange, URI uri) {
 		exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, uri);
 

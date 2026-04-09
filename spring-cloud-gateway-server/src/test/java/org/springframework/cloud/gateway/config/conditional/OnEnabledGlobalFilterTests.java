@@ -31,15 +31,38 @@ import org.springframework.cloud.gateway.filter.WebsocketRoutingFilter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * OnEnabledGlobalFilterTests - 全局过滤器名称规范化测试类
+ *
+ * 本测试类验证OnEnabledGlobalFilter对全局过滤器类名的规范化逻辑： -
+ * 将GlobalFilter类名转换为spring.cloud.gateway.global-filter.{name}格式的属性名
+ *
+ * 例如： - ForwardPathFilter -> global-filter.forward-path - AdaptCachedBodyGlobalFilter ->
+ * global-filter.adapt-cached-body - WebsocketRoutingFilter ->
+ * global-filter.websocket-routing
+ *
+ * @author test
+ */
 class OnEnabledGlobalFilterTests {
 
+	/** 待测试的OnEnabledGlobalFilter实例 */
 	private OnEnabledGlobalFilter onEnabledGlobalFilter;
 
+	/**
+	 * setUp - 测试前准备
+	 *
+	 * 初始化OnEnabledGlobalFilter实例
+	 */
 	@BeforeEach
 	void setUp() {
 		this.onEnabledGlobalFilter = new OnEnabledGlobalFilter();
 	}
 
+	/**
+	 * shouldNormalizeGlobalFiltersNames - 测试全局过滤器名称规范化
+	 *
+	 * 验证各种GlobalFilter的类名能够被正确转换为配置属性名格式
+	 */
 	@Test
 	void shouldNormalizeGlobalFiltersNames() {
 		List<Class<? extends GlobalFilter>> predicates = Arrays.asList(ForwardPathFilter.class,

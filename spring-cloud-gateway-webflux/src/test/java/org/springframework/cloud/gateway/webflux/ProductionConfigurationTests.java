@@ -61,8 +61,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 生产配置测试类。
- * 用于测试 ProxyExchange 在生产环境中的各种功能，包括请求转发、路径处理、请求头管理等。
+ * 生产配置测试类。 用于测试 ProxyExchange 在生产环境中的各种功能，包括请求转发、路径处理、请求头管理等。
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = { "spring.cloud.gateway.proxy.auto-forward=baz" },

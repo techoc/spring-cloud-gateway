@@ -23,27 +23,83 @@ import org.springframework.cloud.gateway.support.Visitor;
 import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
 
+/**
+ * 网关断言接口，继承自标准 Predicate 并扩展了配置和访问者模式支持。
+ *
+ * <p>
+ * GatewayPredicate 是 Spring Cloud Gateway 中所有路由断言的基础接口， 它扩展了 Java 标准库的
+ * {@link Predicate}，并添加了配置支持和访问者模式。
+ * </p>
+ *
+ * <p>
+ * <b>核心功能：</b>
+ * </p>
+ * <ul>
+ * <li>提供逻辑组合操作（and、or、negate）</li>
+ * <li>支持访问者模式用于遍历和处理断言</li>
+ * <li>持有配置信息用于断言的初始化</li>
+ * <li>支持将普通 Predicate 包装为 GatewayPredicate</li>
+ * </ul>
+ *
+ * <p>
+ * <b>使用示例：</b>
+ * </p>
+ * <pre>{@code
+ * // 组合多个断言
+ * GatewayPredicate combined = predicate1.and(predicate2);
+ *
+ * // 取反断言
+ * GatewayPredicate negated = predicate.negate();
+ * }</pre>
+ *
+ * @author Spencer Gibb
+ * @see java.util.function.Predicate
+ * @see HasConfig
+ */
 public interface GatewayPredicate extends Predicate<ServerWebExchange>, HasConfig {
 
+	/**
+	 * 逻辑与操作，组合两个断言。
+	 * @param other 要组合的另一个断言
+	 * @return 组合后的新断言
+	 */
 	@Override
 	default Predicate<ServerWebExchange> and(Predicate<? super ServerWebExchange> other) {
 		return new AndGatewayPredicate(this, wrapIfNeeded(other));
 	}
 
+	/**
+	 * 取反操作。
+	 * @return 取反后的新断言
+	 */
 	@Override
 	default Predicate<ServerWebExchange> negate() {
 		return new NegateGatewayPredicate(this);
 	}
 
+	/**
+	 * 逻辑或操作，组合两个断言。
+	 * @param other 要组合的另一个断言
+	 * @return 组合后的新断言
+	 */
 	@Override
 	default Predicate<ServerWebExchange> or(Predicate<? super ServerWebExchange> other) {
 		return new OrGatewayPredicate(this, wrapIfNeeded(other));
 	}
 
+	/**
+	 * 接受访问者，用于遍历和处理断言。
+	 * @param visitor 访问者对象
+	 */
 	default void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
+	/**
+	 * 将普通的 Predicate 包装为 GatewayPredicate。
+	 * @param other 要包装的 Predicate
+	 * @return 包装后的 GatewayPredicate
+	 */
 	static GatewayPredicate wrapIfNeeded(Predicate<? super ServerWebExchange> other) {
 		GatewayPredicate right;
 
@@ -56,8 +112,16 @@ public interface GatewayPredicate extends Predicate<ServerWebExchange>, HasConfi
 		return right;
 	}
 
+	/**
+	 * 包装普通 Predicate 的适配器类。
+	 *
+	 * <p>
+	 * 将实现 Predicate 接口但未实现 GatewayPredicate 的类 包装为 GatewayPredicate，以便统一处理。
+	 * </p>
+	 */
 	class GatewayPredicateWrapper implements GatewayPredicate {
 
+		/** 被包装的原始 Predicate */
 		private final Predicate<? super ServerWebExchange> delegate;
 
 		public GatewayPredicateWrapper(Predicate<? super ServerWebExchange> delegate) {
@@ -111,10 +175,19 @@ public interface GatewayPredicate extends Predicate<ServerWebExchange>, HasConfi
 
 	}
 
+	/**
+	 * 逻辑与网关断言。
+	 *
+	 * <p>
+	 * 短路求值：左侧为 false 时不计算右侧。
+	 * </p>
+	 */
 	class AndGatewayPredicate implements GatewayPredicate {
 
+		/** 左侧断言 */
 		private final GatewayPredicate left;
 
+		/** 右侧断言 */
 		private final GatewayPredicate right;
 
 		public AndGatewayPredicate(GatewayPredicate left, GatewayPredicate right) {

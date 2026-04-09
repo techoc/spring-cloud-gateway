@@ -38,12 +38,25 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.cloud.gateway.test.TestUtils.getMap;
 
 /**
+ * PreserveHostHeaderGatewayFilterFactory 集成测试类
+ *
+ * 本测试类用于验证 PreserveHostHeaderGatewayFilterFactory 的 Host 头保留功能，包括： - 测试保留原始请求的 Host 头 -
+ * 测试 toString 格式输出
+ *
+ * PreserveHostHeaderGatewayFilterFactory 负责保留原始请求的 Host 头，
+ * 而不是使用网关自动生成的主机名。这对于需要知道原始请求目标的应用非常重要。
+ *
  * @author Spencer Gibb
+ * @author 译者：Spring Cloud Gateway 团队
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class PreserveHostHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 
+	/**
+	 * 测试保留 Host 头的功能 验证：即使路由配置修改了 Host 头为 myhost.net， preserveHostHeader() 仍应保留原始请求的 Host
+	 * 头
+	 */
 	@SuppressWarnings("unchecked")
 	@Test
 	public void preserveHostHeaderGatewayFilterFactoryWorks() {
@@ -56,12 +69,21 @@ public class PreserveHostHeaderGatewayFilterFactoryTests extends BaseWebClientTe
 				});
 	}
 
+	/**
+	 * 测试过滤器的 toString 格式输出 验证：toString 应包含 PreserveHostHeader
+	 */
 	@Test
 	public void toStringFormat() {
 		GatewayFilter filter = new PreserveHostHeaderGatewayFilterFactory().apply();
 		assertThat(filter.toString()).contains("PreserveHostHeader");
 	}
 
+	/**
+	 * 测试配置类
+	 *
+	 * 定义测试路由配置： - 路由顺序为 -1（高优先级） - 使用 preserveHostHeader() 保留原始 Host 头 - 使用
+	 * setRequestHeader 设置 Host 为 myhost.net（但会被 preserveHostHeader 覆盖）
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@Import(DefaultTestConfig.class)

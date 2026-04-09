@@ -25,6 +25,16 @@ import java.lang.annotation.Target;
 import org.springframework.cloud.gateway.filter.factory.GatewayFilterFactory;
 import org.springframework.context.annotation.Conditional;
 
+/**
+ * 条件化注解，用于根据配置属性控制 Gateway 过滤器工厂 Bean 的注册。
+ * <p>
+ * 当指定过滤器工厂对应的配置属性 {@code spring.cloud.gateway.filter.<filter-name>.enabled} 不为
+ * {@code false} 时， 标注的 Bean 才会被注册到 Spring 容器中。
+ * <p>
+ * 该注解提供了一种机制，允许用户通过配置文件禁用不需要的过滤器工厂， 从而在运行时控制哪些过滤器生效。
+ *
+ * @see OnEnabledFilter
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Documented
@@ -32,8 +42,10 @@ import org.springframework.context.annotation.Conditional;
 public @interface ConditionalOnEnabledFilter {
 
 	/**
-	 * The class component to check for.
-	 * @return the class that must be enabled
+	 * 要检查的过滤器工厂类组件。
+	 * <p>
+	 * 指定需要检查启用状态的 {@link GatewayFilterFactory} 实现类。 当未指定值时，将根据标注方法的返回类型自动推断。
+	 * @return 必须启用才能注册 Bean 的过滤器工厂类
 	 */
 	Class<? extends GatewayFilterFactory<?>> value() default OnEnabledFilter.DefaultValue.class;
 

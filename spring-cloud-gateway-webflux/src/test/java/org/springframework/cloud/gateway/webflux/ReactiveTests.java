@@ -55,8 +55,7 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 响应式测试类。
- * 用于测试 ProxyExchange 在响应式环境中的功能，包括 Flux 和 Mono 类型的处理。
+ * 响应式测试类。 用于测试 ProxyExchange 在响应式环境中的功能，包括 Flux 和 Mono 类型的处理。
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)

@@ -43,6 +43,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.cloud.gateway.config.GatewayMetricsProperties.DEFAULT_PREFIX;
 
+/**
+ * GatewayMetricsFilter 集成测试类
+ *
+ * 本测试类用于验证 GatewayMetricsFilter 的指标收集功能，包括： -
+ * 验证请求指标包含正确的标签信息（outcome、status、httpStatusCode、httpMethod、routeId、routeUri） -
+ * 验证对异常目标的请求也能正确记录指标 - 验证自定义 HTTP 状态码的指标记录
+ *
+ * GatewayMetricsFilter 是 Spring Cloud Gateway 的指标过滤器， 用于收集和记录网关请求的各种指标数据，支持 Micrometer
+ * 集成。
+ *
+ * @author 译者：Spring Cloud Gateway 团队
+ */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class GatewayMetricsFilterTests extends BaseWebClientTests {
@@ -55,6 +67,11 @@ public class GatewayMetricsFilterTests extends BaseWebClientTests {
 	@Value("${test.uri}")
 	private String testUri;
 
+	/**
+	 * 测试网关请求指标是否包含正确的标签 验证：成功请求应包含
+	 * outcome=SUCCESSFUL、status=OK、httpStatusCode=200、httpMethod=GET、
+	 * routeId=default_path_to_httpbin、routeUri 等标签
+	 */
 	@Test
 	public void gatewayRequestsMeterFilterHasTags() {
 		testClient.get().uri("/headers").exchange().expectStatus().isOk();
@@ -66,6 +83,10 @@ public class GatewayMetricsFilterTests extends BaseWebClientTests {
 		assertMetricsContainsTag("routeUri", testUri);
 	}
 
+	/**
+	 * 测试对错误目标URI的请求是否正确记录指标 验证：5xx 错误响应应包含
+	 * outcome=SERVER_ERROR、status=INTERNAL_SERVER_ERROR 等标签
+	 */
 	@Test
 	public void gatewayRequestsMeterFilterHasTagsForBadTargetUri() {
 		testClient.get().uri("/badtargeturi").exchange().expectStatus().is5xxServerError();
@@ -77,6 +98,10 @@ public class GatewayMetricsFilterTests extends BaseWebClientTests {
 		assertMetricsContainsTag("routeUri", testUri);
 	}
 
+	/**
+	 * 测试 SetStatus 过滤器设置的自定义状态码是否正确记录到指标中 验证：自定义状态码 432 应正确记录，outcome 应为 CUSTOM，status 应为
+	 * 432
+	 */
 	@Test
 	public void hasMetricsForSetStatusFilter() {
 		HttpHeaders headers = new HttpHeaders();
@@ -93,6 +118,11 @@ public class GatewayMetricsFilterTests extends BaseWebClientTests {
 		assertMetricsContainsTag("httpMethod", HttpMethod.POST.toString());
 	}
 
+	/**
+	 * 断言指定标签键值对存在于请求指标中
+	 * @param tagKey 标签键名
+	 * @param tagValue 标签值
+	 */
 	private void assertMetricsContainsTag(String tagKey, String tagValue) {
 		// @formatter:off
 		assertThat(this.meterRegistry.get(REQUEST_METRICS_NAME).tag(tagKey, tagValue)
@@ -102,6 +132,11 @@ public class GatewayMetricsFilterTests extends BaseWebClientTests {
 		// @formatter:on
 	}
 
+	/**
+	 * 自定义测试配置类
+	 *
+	 * 用于配置带有自定义 HTTP 状态码（432）的路由，以测试 SetStatus 过滤器 的指标记录功能。
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@RestController

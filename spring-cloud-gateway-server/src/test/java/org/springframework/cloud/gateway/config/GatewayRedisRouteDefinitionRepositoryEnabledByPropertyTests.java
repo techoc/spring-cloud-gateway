@@ -32,6 +32,14 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * GatewayRedisRouteDefinitionRepositoryEnabledByPropertyTests - 通过属性启用Redis路由定义仓库测试类
+ *
+ * 本测试类验证当配置spring.cloud.gateway.redis-route-definition-repository.enabled=true时： -
+ * RedisRouteDefinitionRepository Bean会被正确创建 - 依赖Testcontainers启动Redis容器进行测试
+ *
+ * @author test
+ */
 @SpringBootTest(classes = GatewayRedisAutoConfigurationTests.Config.class,
 		properties = "spring.cloud.gateway.redis-route-definition-repository.enabled=true")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -39,23 +47,41 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("DockerRequired")
 public class GatewayRedisRouteDefinitionRepositoryEnabledByPropertyTests {
 
+	/** Redis Testcontainers容器 */
 	@Container
 	public static GenericContainer redis = new GenericContainer<>("redis:5.0.14-alpine").withExposedPorts(6379);
 
+	/** Redis路由定义仓库 */
 	@Autowired(required = false)
 	private RedisRouteDefinitionRepository redisRouteDefinitionRepository;
 
+	/**
+	 * startRedisContainer - 启动Redis容器
+	 *
+	 * 在所有测试方法执行前启动Redis容器
+	 */
 	@BeforeAll
 	public static void startRedisContainer() {
 		redis.start();
 	}
 
+	/**
+	 * containerProperties - 配置Redis动态属性
+	 *
+	 * 将Testcontainers的Redis容器配置动态注册到Spring测试环境中
+	 * @param registry 动态属性注册表
+	 */
 	@DynamicPropertySource
 	static void containerProperties(DynamicPropertyRegistry registry) {
 		registry.add("spring.redis.host", redis::getContainerIpAddress);
 		registry.add("spring.redis.port", redis::getFirstMappedPort);
 	}
 
+	/**
+	 * redisRouteDefinitionRepository - 验证RedisRouteDefinitionRepository不为空
+	 *
+	 * 确认当通过属性启用时，RedisRouteDefinitionRepository Bean被正确创建
+	 */
 	@Test
 	public void redisRouteDefinitionRepository() {
 		assertThat(redisRouteDefinitionRepository).isNotNull();

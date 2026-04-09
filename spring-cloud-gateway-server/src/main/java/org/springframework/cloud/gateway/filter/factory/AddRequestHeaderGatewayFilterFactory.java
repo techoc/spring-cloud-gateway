@@ -27,16 +27,36 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 
 /**
+ * 添加请求头过滤器工厂。
+ * <p>
+ * 该过滤器在转发请求到下游服务之前，向请求添加指定的 HTTP 头部。 支持 SpEL 表达式动态取值，通过
+ * {@link ServerWebExchangeUtils#expand} 方法解析。
+ * <p>
+ * 配置示例（YAML）： <pre>
+ * filters:
+ *   - AddRequestHeader=X-Custom-Header, custom-value
+ *   - AddRequestHeader=X-Request-ID, #{T(java.util.UUID).randomUUID()}
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class AddRequestHeaderGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
+	/**
+	 * 创建添加请求头过滤器。
+	 * <p>
+	 * 过滤器会将配置的头名称和值添加到请求头中，支持动态表达式解析。 使用 exchange.mutate() 创建新的请求对象，不修改原始请求。
+	 * @param config 名称-值配置对象
+	 * @return 网关过滤器实例
+	 */
 	@Override
 	public GatewayFilter apply(NameValueConfig config) {
 		return new GatewayFilter() {
 			@Override
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+				// 解析值中的 SpEL 表达式
 				String value = ServerWebExchangeUtils.expand(exchange, config.getValue());
+				// 创建新的请求对象，添加指定的头部
 				ServerHttpRequest request = exchange.getRequest().mutate()
 						.headers(httpHeaders -> httpHeaders.add(config.getName(), value)).build();
 

@@ -35,33 +35,61 @@ import static org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClien
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_LOADBALANCER_RESPONSE_ATTR;
 
 /**
- * A {@link GlobalFilter} that allows passing the {@code} instanceId) of the
- * {@link ServiceInstance} selected by the {@link ReactiveLoadBalancerClientFilter} in a
- * cookie.
+ * 负载均衡服务实例 Cookie 过滤器。
+ * <p>
+ * 该全局过滤器配合 {@link ReactiveLoadBalancerClientFilter} 工作，当负载均衡器选定 某个服务实例后，将该实例的
+ * {@code instanceId} 以 Cookie 的形式添加到后续请求头中， 实现粘性会话（Sticky Session）功能。只有在
+ * {@link LoadBalancerProperties} 配置中 启用了 {@code addServiceInstanceCookie} 选项且配置了 Cookie
+ * 名称时，该过滤器才会生效。
+ * <p>
+ * 执行顺序为 {@link ReactiveLoadBalancerClientFilter#LOAD_BALANCER_CLIENT_FILTER_ORDER} + 1，
+ * 确保在负载均衡器选择实例之后执行。
  *
  * @author Olga Maciaszek-Sharma
  * @since 3.0.2
  */
 public class LoadBalancerServiceInstanceCookieFilter implements GlobalFilter, Ordered {
 
+	/** 负载均衡属性，用于获取粘性会话配置（旧版构造方式） */
 	private LoadBalancerProperties loadBalancerProperties;
 
+	/** 负载均衡客户端工厂，用于按服务 ID 获取负载均衡属性（推荐使用） */
 	private ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerClientFactory;
 
 	/**
-	 * @deprecated in favour of
-	 * {@link LoadBalancerServiceInstanceCookieFilter#LoadBalancerServiceInstanceCookieFilter(ReactiveLoadBalancer.Factory)}
+	 * @deprecated 请使用
+	 * {@link #LoadBalancerServiceInstanceCookieFilter(ReactiveLoadBalancer.Factory)} 代替。
+	 * 该构造方法无法按服务 ID 获取个性化的负载均衡属性。
+	 * @param loadBalancerProperties 全局负载均衡属性配置
 	 */
 	@Deprecated
 	public LoadBalancerServiceInstanceCookieFilter(LoadBalancerProperties loadBalancerProperties) {
 		this.loadBalancerProperties = loadBalancerProperties;
 	}
 
+	/**
+	 * 构造负载均衡服务实例 Cookie 过滤器。
+	 * @param loadBalancerClientFactory 负载均衡客户端工厂，用于按服务 ID 获取负载均衡配置
+	 */
 	public LoadBalancerServiceInstanceCookieFilter(
 			ReactiveLoadBalancer.Factory<ServiceInstance> loadBalancerClientFactory) {
 		this.loadBalancerClientFactory = loadBalancerClientFactory;
 	}
 
+	/**
+	 * 过滤请求，若满足粘性会话条件则将服务实例 ID 添加为 Cookie。
+	 * <p>
+	 * 处理逻辑：
+	 * <ol>
+	 * <li>若负载均衡响应为空或未选到服务实例，跳过处理；</li>
+	 * <li>若负载均衡配置未启用实例 Cookie，跳过处理；</li>
+	 * <li>若实例 Cookie 名称未配置，跳过处理；</li>
+	 * <li>否则，将实例 ID 以 Cookie 形式追加到请求头并继续过滤链。</li>
+	 * </ol>
+	 * @param exchange 当前服务器 Web 交换对象
+	 * @param chain 过滤器链
+	 * @return {@code Mono<Void>}，表示请求处理完成的信号
+	 */
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 		Response<ServiceInstance> serviceInstanceResponse = exchange.getAttribute(GATEWAY_LOADBALANCER_RESPONSE_ATTR);
@@ -78,6 +106,7 @@ public class LoadBalancerServiceInstanceCookieFilter implements GlobalFilter, Or
 		if (!StringUtils.hasText(instanceIdCookieName)) {
 			return chain.filter(exchange);
 		}
+		// 将服务实例 ID 以 Cookie 形式追加到请求头的 Cookie 列表中
 		ServerWebExchange newExchange = exchange.mutate().request(exchange.getRequest().mutate().headers((headers) -> {
 			List<String> cookieHeaders = new ArrayList<>(headers.getOrEmpty(HttpHeaders.COOKIE));
 			String serviceInstanceCookie = new HttpCookie(instanceIdCookieName,
@@ -88,6 +117,13 @@ public class LoadBalancerServiceInstanceCookieFilter implements GlobalFilter, Or
 		return chain.filter(newExchange);
 	}
 
+	/**
+	 * 返回过滤器执行顺序。
+	 * <p>
+	 * 执行顺序为 {@link ReactiveLoadBalancerClientFilter#LOAD_BALANCER_CLIENT_FILTER_ORDER} +
+	 * 1， 确保在负载均衡器选择服务实例后执行。
+	 * @return 过滤器执行顺序值
+	 */
 	@Override
 	public int getOrder() {
 		return LOAD_BALANCER_CLIENT_FILTER_ORDER + 1;

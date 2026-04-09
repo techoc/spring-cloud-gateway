@@ -37,10 +37,21 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
 
 /**
+ * StripPrefixGatewayFilterFactory 单元测试类
+ *
+ * 本测试类用于验证 StripPrefixGatewayFilterFactory 的路径前缀移除功能，包括： - 测试移除指定数量的路径前缀 -
+ * 测试各种边界情况（空路径、单斜杠、多斜杠等） - 测试 toString 格式输出
+ *
+ * StripPrefixGatewayFilterFactory 负责移除请求路径的前缀部分， 用于将请求路径中的网关前缀剥离后再转发给后端服务。
+ *
  * @author Ryan Baxter
+ * @author 译者：Spring Cloud Gateway 团队
  */
 public class StripPrefixGatewayFilterFactoryTests {
 
+	/**
+	 * 测试移除路径前缀的各种场景 验证：包括标准路径、空路径、尾部斜杠、多个斜杠等边界情况
+	 */
 	@Test
 	public void testStripPrefix() {
 		testStripPrefixFilter("/foo/bar", "/bar", 1);
@@ -55,6 +66,12 @@ public class StripPrefixGatewayFilterFactoryTests {
 		testStripPrefixFilter("/this/is/a/long/path/with/a/lot/of/slashes", "/path/with/a/lot/of/slashes", 4);
 	}
 
+	/**
+	 * 执行路径前缀移除测试的辅助方法
+	 * @param actualPath 原始请求路径
+	 * @param expectedPath 移除前缀后的预期路径
+	 * @param parts 要移除的路径段数
+	 */
 	private void testStripPrefixFilter(String actualPath, String expectedPath, int parts) {
 		GatewayFilter filter = new StripPrefixGatewayFilterFactory().apply(c -> c.setParts(parts));
 
@@ -79,6 +96,9 @@ public class StripPrefixGatewayFilterFactoryTests {
 		assertThat(uris).contains(request.getURI());
 	}
 
+	/**
+	 * 测试过滤器的 toString 格式输出 验证：toString 应包含配置的 parts 数量
+	 */
 	@Test
 	public void toStringFormat() {
 		Config config = new Config();

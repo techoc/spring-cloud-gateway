@@ -37,10 +37,23 @@ import org.springframework.web.util.UriComponentsBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+/**
+ * AddResponseHeaderGatewayFilterFactory 集成测试类
+ *
+ * 本测试类用于验证 AddResponseHeaderGatewayFilterFactory 的响应头添加功能，包括： - 测试为响应添加单个响应头 - 测试通过 Java
+ * DSL 配置添加响应头 - 测试 toString 格式输出
+ *
+ * AddResponseHeaderGatewayFilterFactory 负责在响应返回前添加指定的 HTTP 响应头， 支持静态值和占位符形式的动态值。
+ *
+ * @author 译者：Spring Cloud Gateway 团队
+ */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
 class AddResponseHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 
+	/**
+	 * 测试添加响应头的功能 验证：响应应包含 X-Request-Foo: Bar 头
+	 */
 	@Test
 	void testResposneHeaderFilter() {
 		URI uri = UriComponentsBuilder.fromUriString(this.baseUri + "/headers").build(true).toUri();
@@ -50,6 +63,9 @@ class AddResponseHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 				expectedValue);
 	}
 
+	/**
+	 * 测试通过 Java DSL 配置添加响应头的功能 验证：响应头值应包含动态替换的 {sub} 占位符
+	 */
 	@Test
 	void testResposneHeaderFilterJavaDsl() {
 		URI uri = UriComponentsBuilder.fromUriString(this.baseUri + "/get").build(true).toUri();
@@ -58,6 +74,9 @@ class AddResponseHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 		testClient.get().uri(uri).header("Host", host).exchange().expectHeader().valueEquals("example", expectedValue);
 	}
 
+	/**
+	 * 测试过滤器的 toString 格式输出 验证：toString 应包含配置的名称和值
+	 */
 	@Test
 	void toStringFormat() {
 		NameValueConfig config = new NameValueConfig().setName("myname").setValue("myvalue");
@@ -65,6 +84,11 @@ class AddResponseHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 		assertThat(filter.toString()).contains("myname").contains("myvalue");
 	}
 
+	/**
+	 * 测试配置类
+	 *
+	 * 定义测试路由配置，测试通过 Java DSL 添加动态响应头
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@Import(DefaultTestConfig.class)

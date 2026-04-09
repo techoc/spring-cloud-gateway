@@ -26,16 +26,36 @@ import org.springframework.web.server.ServerWebExchange;
 import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 
 /**
+ * 添加响应头过滤器工厂。
+ * <p>
+ * 该过滤器在响应返回给客户端之前，向响应添加指定的 HTTP 头部。 支持 SpEL 表达式动态取值，通过
+ * {@link ServerWebExchangeUtils#expand} 方法解析。
+ * <p>
+ * 配置示例（YAML）： <pre>
+ * filters:
+ *   - AddResponseHeader=X-Custom-Header, custom-value
+ *   - AddResponseHeader=X-Response-Time, #{T(System).currentTimeMillis()}
+ * </pre>
+ *
  * @author Spencer Gibb
  */
 public class AddResponseHeaderGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
+	/**
+	 * 创建添加响应头过滤器。
+	 * <p>
+	 * 过滤器会将配置的头名称和值添加到响应头中，支持动态表达式解析。 由于是在过滤器链执行后添加响应头，适用于在响应阶段才能确定的动态值。
+	 * @param config 名称-值配置对象
+	 * @return 网关过滤器实例
+	 */
 	@Override
 	public GatewayFilter apply(NameValueConfig config) {
 		return new GatewayFilter() {
 			@Override
 			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+				// 解析值中的 SpEL 表达式
 				String value = ServerWebExchangeUtils.expand(exchange, config.getValue());
+				// 直接添加到响应头
 				exchange.getResponse().getHeaders().add(config.getName(), value);
 
 				return chain.filter(exchange);

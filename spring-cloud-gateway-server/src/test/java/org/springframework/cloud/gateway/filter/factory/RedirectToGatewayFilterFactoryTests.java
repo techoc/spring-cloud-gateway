@@ -37,16 +37,32 @@ import org.springframework.test.annotation.DirtiesContext;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+/**
+ * RedirectToGatewayFilterFactory 集成测试类
+ *
+ * 本测试类用于验证 RedirectToGatewayFilterFactory 的重定向功能，包括： - 测试绝对 URL 重定向 - 测试相对 URL 重定向 -
+ * 测试使用字符串状态码的重定向 - 测试 toString 格式输出
+ *
+ * RedirectToGatewayFilterFactory 负责生成 HTTP 重定向响应， 支持绝对 URL 和相对 URL，以及自定义 HTTP 状态码。
+ *
+ * @author 译者：Spring Cloud Gateway 团队
+ */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class RedirectToGatewayFilterFactoryTests extends BaseWebClientTests {
 
+	/**
+	 * 测试绝对 URL 重定向 验证：响应状态码应为 302，Location 头应为 https://example.org
+	 */
 	@Test
 	public void redirectToFilterWorks() {
 		testClient.get().uri("/").header("Host", "www.redirectto.org").exchange().expectStatus()
 				.isEqualTo(HttpStatus.FOUND).expectHeader().valueEquals(HttpHeaders.LOCATION, "https://example.org");
 	}
 
+	/**
+	 * 测试相对 URL 重定向 验证：响应状态码应为 302，Location 头应为 /index.html#/customers
+	 */
 	@Test
 	public void redirectToRelativeUrlFilterWorks() {
 		testClient.get().uri("/").header("Host", "www.relativeredirect.org").exchange().expectStatus()
@@ -68,6 +84,12 @@ public class RedirectToGatewayFilterFactoryTests extends BaseWebClientTests {
 		assertThat(filter.toString()).contains("301").contains("http://newurl");
 	}
 
+	/**
+	 * 测试配置类
+	 *
+	 * 定义测试路由配置，包括： - relative_redirect_uri_object: 测试使用 URI 对象和字符串状态码的重定向 -
+	 * relative_redirect: 测试使用相对 URL 的重定向
+	 */
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
 	@Import(DefaultTestConfig.class)

@@ -31,14 +31,30 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * OnEnabledComponentTests - 组件启用条件判断测试类
+ *
+ * 本测试类验证OnEnabledComponent条件判断逻辑： - 默认情况下组件应该被匹配（启用） -
+ * 当配置spring.cloud.gateway.{component-name}.enabled=false时，组件不应被匹配
+ *
+ * @author test
+ */
 class OnEnabledComponentTests {
 
+	/** 待测试的OnEnabledComponent实例 */
 	private OnEnabledComponent<Object> onEnabledComponent;
 
+	/** 模拟环境对象 */
 	private MockEnvironment environment;
 
+	/** 条件上下文 */
 	private ConditionContext conditionContext;
 
+	/**
+	 * setUp - 测试前准备
+	 *
+	 * 初始化测试所需的组件和环境对象
+	 */
 	@BeforeEach
 	void setUp() {
 		this.onEnabledComponent = createOnEnabledComponent("test-class");
@@ -46,6 +62,11 @@ class OnEnabledComponentTests {
 		this.conditionContext = mock(ConditionContext.class);
 	}
 
+	/**
+	 * shouldMatchComponent - 测试默认启用组件应该被匹配
+	 * <p>
+	 * 验证当没有禁用配置时，组件条件判断应该返回匹配
+	 */
 	@Test
 	public void shouldMatchComponent() {
 		when(conditionContext.getEnvironment()).thenReturn(environment);
@@ -56,6 +77,11 @@ class OnEnabledComponentTests {
 		assertThat(outcome.isMatch()).isTrue();
 	}
 
+	/**
+	 * shouldNotMatchDisabledComponent - 测试禁用组件不应该被匹配
+	 * <p>
+	 * 验证当配置spring.cloud.gateway.{component-name}.enabled=false时 组件条件判断应该返回不匹配，并包含正确的错误消息
+	 */
 	@Test
 	public void shouldNotMatchDisabledComponent() {
 		String componentName = "disabled-component";
@@ -70,6 +96,11 @@ class OnEnabledComponentTests {
 		assertThat(outcome.getMessage()).contains("DisabledComponent").contains("bean is not available");
 	}
 
+	/**
+	 * mockMetaData - 创建模拟的注解元数据
+	 * @param value 注解属性值
+	 * @return AnnotatedTypeMetadata模拟对象
+	 */
 	private AnnotatedTypeMetadata mockMetaData(Class<?> value) {
 		AnnotatedTypeMetadata metadata = mock(AnnotatedTypeMetadata.class);
 		when(metadata.getAnnotationAttributes(eq(ConditionalOnEnabledFilter.class.getName())))
@@ -77,6 +108,11 @@ class OnEnabledComponentTests {
 		return metadata;
 	}
 
+	/**
+	 * createOnEnabledComponent - 创建测试用的OnEnabledComponent实例
+	 * @param componentName 组件名称
+	 * @return OnEnabledComponent实例
+	 */
 	private OnEnabledComponent<Object> createOnEnabledComponent(String componentName) {
 		return new OnEnabledComponent<Object>() {
 			@Override
@@ -96,10 +132,16 @@ class OnEnabledComponentTests {
 		};
 	}
 
+	/**
+	 * EnabledComponent - 启用的测试组件
+	 */
 	protected static class EnabledComponent {
 
 	}
 
+	/**
+	 * DisabledComponent - 禁用的测试组件
+	 */
 	protected static class DisabledComponent {
 
 	}

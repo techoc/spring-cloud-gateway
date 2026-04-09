@@ -45,6 +45,15 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.scripting.support.ResourceScriptSource;
 import org.springframework.web.reactive.DispatcherHandler;
 
+/**
+ * Gateway Redis 自动配置类。
+ * <p>
+ * 当类路径中存在 Redis 相关依赖且 {@code ReactiveRedisTemplate} Bean 可用时， 自动配置基于 Redis
+ * 的限流器、路由定义仓库等组件。
+ * </p>
+ *
+ * @author Spencer Gibb
+ */
 @Configuration(proxyBeanMethods = false)
 @AutoConfigureAfter(RedisReactiveAutoConfiguration.class)
 @AutoConfigureBefore(GatewayAutoConfiguration.class)
@@ -53,6 +62,13 @@ import org.springframework.web.reactive.DispatcherHandler;
 @ConditionalOnProperty(name = "spring.cloud.gateway.redis.enabled", matchIfMissing = true)
 class GatewayRedisAutoConfiguration {
 
+	/**
+	 * 创建 Redis 请求限流脚本 Bean。
+	 * <p>
+	 * 加载 Lua 脚本（{@code request_rate_limiter.lua}）用于实现基于 Redis 的令牌桶限流算法。
+	 * </p>
+	 * @return Redis 脚本对象
+	 */
 	@Bean
 	@SuppressWarnings("unchecked")
 	public RedisScript redisRequestRateLimiterScript() {
@@ -63,6 +79,16 @@ class GatewayRedisAutoConfiguration {
 		return redisScript;
 	}
 
+	/**
+	 * 创建 Redis 限流器 Bean。
+	 * <p>
+	 * 基于 Redis 和 Lua 脚本实现分布式令牌桶限流。
+	 * </p>
+	 * @param redisTemplate Redis 字符串操作模板
+	 * @param redisScript 限流 Lua 脚本
+	 * @param configurationService 配置服务
+	 * @return Redis 限流器实例
+	 */
 	@Bean
 	@ConditionalOnMissingBean
 	public RedisRateLimiter redisRateLimiter(ReactiveStringRedisTemplate redisTemplate,
@@ -71,6 +97,12 @@ class GatewayRedisAutoConfiguration {
 		return new RedisRateLimiter(redisTemplate, redisScript, configurationService);
 	}
 
+	/**
+	 * 创建 Redis 路由定义仓库 Bean。 当启用
+	 * spring.cloud.gateway.redis-route-definition-repository.enabled 配置时生效。
+	 * @param reactiveRedisTemplate Reactive Redis 模板
+	 * @return Redis 路由定义仓库
+	 */
 	@Bean
 	@ConditionalOnProperty(value = "spring.cloud.gateway.redis-route-definition-repository.enabled",
 			havingValue = "true")
@@ -80,6 +112,15 @@ class GatewayRedisAutoConfiguration {
 		return new RedisRouteDefinitionRepository(reactiveRedisTemplate);
 	}
 
+	/**
+	 * 创建用于路由定义存储的 Reactive Redis 模板。
+	 * <p>
+	 * 使用 StringRedisSerializer 作为键序列化器，Jackson2JsonRedisSerializer 作为值序列化器， 支持
+	 * {@link RouteDefinition} 的 JSON 序列化。
+	 * </p>
+	 * @param factory Redis 响应式连接工厂
+	 * @return 路由定义专用的 Reactive Redis 模板
+	 */
 	@Bean
 	public ReactiveRedisTemplate<String, RouteDefinition> reactiveRedisRouteDefinitionTemplate(
 			ReactiveRedisConnectionFactory factory) {

@@ -40,6 +40,17 @@ import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * NettyRoutingFilter 集成测试类
+ *
+ * 本测试类用于验证 NettyRoutingFilter 的路由功能，包括： - 测试使用 Reactor Netty 客户端进行 HTTP 请求路由 - 验证 URL
+ * 协议大小写不敏感（gh-2207 问题修复） - 测试与外部 HTTP 服务的集成
+ *
+ * NettyRoutingFilter 是 Spring Cloud Gateway 的核心路由过滤器， 使用 Netty 客户端进行后端服务的 HTTP/HTTPS
+ * 请求转发。
+ *
+ * @author 译者：Spring Cloud Gateway 团队
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class NettyRoutingFilterTests extends BaseWebClientTests {
 
@@ -53,6 +64,9 @@ class NettyRoutingFilterTests extends BaseWebClientTests {
 		port = SocketUtils.findAvailableTcpPort();
 	}
 
+	/**
+	 * 测试模拟服务器是否正常工作（已禁用） 注意：此测试因某些原因被禁用
+	 */
 	@Test
 	@Disabled
 	void mockServerWorks() {
@@ -60,6 +74,9 @@ class NettyRoutingFilterTests extends BaseWebClientTests {
 		client.get().uri("/mockexample").exchange().expectStatus().value(Matchers.lessThan(500));
 	}
 
+	/**
+	 * 测试 URL 协议大小写不敏感性（Issue #2207） 验证：HTTP:// 和 http:// 协议应被同等处理，确保路由正常工作
+	 */
 	@Test
 	// gh-2207
 	void testCaseInsensitiveScheme() {
@@ -81,6 +98,12 @@ class NettyRoutingFilterTests extends BaseWebClientTests {
 		}
 	}
 
+	/**
+	 * 测试配置类
+	 *
+	 * 定义测试所需的路由配置，包括： - /mockexample 路由：使用 httpbin 前缀并转发到 example.com - /issue
+	 * 路由：用于测试大小写不敏感的协议处理
+	 */
 	@SpringBootConfiguration
 	@EnableAutoConfiguration
 	@Import(PermitAllSecurityConfiguration.class)

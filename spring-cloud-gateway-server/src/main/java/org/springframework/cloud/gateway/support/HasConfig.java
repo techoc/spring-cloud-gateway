@@ -16,8 +16,25 @@
 
 package org.springframework.cloud.gateway.support;
 
+/**
+ * 标记接口，表示实现类持有配置对象。
+ * <p>
+ * 该接口用于标识那些包含配置信息的组件，如过滤器工厂（GatewayFilterFactory）
+ * 和路由谓词工厂（RoutePredicateFactory）等。通过实现此接口， 外部可以统一获取这些组件持有的配置对象。
+ * </p>
+ * <p>
+ * 默认实现返回 null，子类可覆盖 {@link #getConfig()} 方法提供实际的配置对象。
+ * </p>
+ */
 public interface HasConfig {
 
+	/**
+	 * 返回当前组件持有的配置对象。
+	 * <p>
+	 * 默认实现返回 null，子类应覆盖此方法返回实际的配置对象。 返回值的具体类型由子类决定，调用方通常需要根据具体类型进行转换。
+	 * </p>
+	 * @return 配置对象，若无配置则返回 null
+	 */
 	default Object getConfig() {
 		return null;
 	}

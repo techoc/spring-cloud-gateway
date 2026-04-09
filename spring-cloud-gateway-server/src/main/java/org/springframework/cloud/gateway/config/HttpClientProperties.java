@@ -45,7 +45,12 @@ import org.springframework.util.unit.DataSize;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Configuration properties for the Netty {@link reactor.netty.http.client.HttpClient}.
+ * Netty {@link reactor.netty.http.client.HttpClient} 的配置属性类。
+ * <p>
+ * 提供对 Netty HTTP 客户端各种配置选项的绑定和验证功能，包括连接池、代理、SSL、 WebSocket、超时设置等配置。
+ *
+ * @author Spencer Gibb
+ * @author BTC
  */
 @ConfigurationProperties("spring.cloud.gateway.httpclient")
 @Validated
@@ -60,7 +65,11 @@ public class HttpClientProperties {
 	/** The max response header size. */
 	private DataSize maxHeaderSize;
 
-	/** The max initial line length. */
+	/**
+	 * 最大初始行长度。
+	 * <p>
+	 * The max initial line length.
+	 */
 	private DataSize maxInitialLineLength;
 
 	/** Pool configuration for Netty HttpClient. */
@@ -81,76 +90,148 @@ public class HttpClientProperties {
 	/** Enables compression for Netty HttpClient. */
 	private boolean compression;
 
+	/**
+	 * 获取连接超时时间。
+	 * @return 连接超时时间（毫秒）
+	 */
 	public Integer getConnectTimeout() {
 		return connectTimeout;
 	}
 
+	/**
+	 * 设置连接超时时间。
+	 * @param connectTimeout 连接超时时间（毫秒）
+	 */
 	public void setConnectTimeout(Integer connectTimeout) {
 		this.connectTimeout = connectTimeout;
 	}
 
+	/**
+	 * 获取响应超时时间。
+	 * @return 响应超时时间
+	 */
 	public Duration getResponseTimeout() {
 		return responseTimeout;
 	}
 
+	/**
+	 * 设置响应超时时间。
+	 * @param responseTimeout 响应超时时间
+	 */
 	public void setResponseTimeout(Duration responseTimeout) {
 		this.responseTimeout = responseTimeout;
 	}
 
+	/**
+	 * 获取最大响应头大小。
+	 * @return 最大响应头大小
+	 */
 	@Max(Integer.MAX_VALUE)
 	public DataSize getMaxHeaderSize() {
 		return maxHeaderSize;
 	}
 
+	/**
+	 * 设置最大响应头大小。
+	 * @param maxHeaderSize 最大响应头大小
+	 */
 	public void setMaxHeaderSize(DataSize maxHeaderSize) {
 		this.maxHeaderSize = maxHeaderSize;
 	}
 
+	/**
+	 * 获取最大初始行长度。
+	 * @return 最大初始行长度
+	 */
 	@Max(Integer.MAX_VALUE)
 	public DataSize getMaxInitialLineLength() {
 		return maxInitialLineLength;
 	}
 
+	/**
+	 * 设置最大初始行长度。
+	 * @param maxInitialLineLength 最大初始行长度
+	 */
 	public void setMaxInitialLineLength(DataSize maxInitialLineLength) {
 		this.maxInitialLineLength = maxInitialLineLength;
 	}
 
+	/**
+	 * 获取连接池配置。
+	 * @return 连接池配置
+	 */
 	public Pool getPool() {
 		return pool;
 	}
 
+	/**
+	 * 设置连接池配置。
+	 * @param pool 连接池配置
+	 */
 	public void setPool(Pool pool) {
 		this.pool = pool;
 	}
 
+	/**
+	 * 获取代理配置。
+	 * @return 代理配置
+	 */
 	public Proxy getProxy() {
 		return proxy;
 	}
 
+	/**
+	 * 设置代理配置。
+	 * @param proxy 代理配置
+	 */
 	public void setProxy(Proxy proxy) {
 		this.proxy = proxy;
 	}
 
+	/**
+	 * 获取 SSL/TLS 配置。
+	 * @return SSL/TLS 配置
+	 */
 	public Ssl getSsl() {
 		return ssl;
 	}
 
+	/**
+	 * 设置 SSL/TLS 配置。
+	 * @param ssl SSL/TLS 配置
+	 */
 	public void setSsl(Ssl ssl) {
 		this.ssl = ssl;
 	}
 
+	/**
+	 * 获取 WebSocket 配置。
+	 * @return WebSocket 配置
+	 */
 	public Websocket getWebsocket() {
 		return this.websocket;
 	}
 
+	/**
+	 * 设置 WebSocket 配置。
+	 * @param websocket WebSocket 配置
+	 */
 	public void setWebsocket(Websocket websocket) {
 		this.websocket = websocket;
 	}
 
+	/**
+	 * 检查是否启用 Wiretap 调试功能。
+	 * @return 是否启用 Wiretap 调试
+	 */
 	public boolean isWiretap() {
 		return this.wiretap;
 	}
 
+	/**
+	 * 设置是否启用 Wiretap 调试功能。
+	 * @param wiretap 是否启用 Wiretap 调试
+	 */
 	public void setWiretap(boolean wiretap) {
 		this.wiretap = wiretap;
 	}
@@ -159,6 +240,10 @@ public class HttpClientProperties {
 		return compression;
 	}
 
+	/**
+	 * 设置是否启用压缩功能。
+	 * @param compression 是否启用压缩
+	 */
 	public void setCompression(boolean compression) {
 		this.compression = compression;
 	}
@@ -182,9 +267,18 @@ public class HttpClientProperties {
 
 	}
 
+	/**
+	 * Netty HttpClient 连接池配置类。
+	 * <p>
+	 * 提供对连接池类型、最大连接数、获取超时、空闲时间等配置的管理。
+	 */
 	public static class Pool {
 
-		/** Type of pool for HttpClient to use, defaults to ELASTIC. */
+		/**
+		 * 连接池类型，默认为 ELASTIC。
+		 * <p>
+		 * Type of pool for HttpClient to use, defaults to ELASTIC.
+		 */
 		private PoolType type = PoolType.ELASTIC;
 
 		/** The channel pool map name, defaults to proxy. */
@@ -218,6 +312,10 @@ public class HttpClientProperties {
 		private Duration evictionInterval = Duration.ZERO;
 
 		/**
+		 * 是否启用通道池指标收集并注册到 Micrometer。
+		 * <p>
+		 * 默认禁用。
+		 * <p>
 		 * Enables channel pools metrics to be collected and registered in Micrometer.
 		 * Disabled by default.
 		 */
@@ -255,6 +353,10 @@ public class HttpClientProperties {
 			this.acquireTimeout = acquireTimeout;
 		}
 
+		/**
+		 * 获取通道最大空闲时间。
+		 * @return 最大空闲时间
+		 */
 		public Duration getMaxIdleTime() {
 			return maxIdleTime;
 		}
@@ -263,30 +365,58 @@ public class HttpClientProperties {
 			this.maxIdleTime = maxIdleTime;
 		}
 
+		/**
+		 * 获取通道最大生命周期。
+		 * @return 最大生命周期
+		 */
 		public Duration getMaxLifeTime() {
 			return maxLifeTime;
 		}
 
+		/**
+		 * 设置通道最大生命周期。
+		 * @param maxLifeTime 最大生命周期
+		 */
 		public void setMaxLifeTime(Duration maxLifeTime) {
 			this.maxLifeTime = maxLifeTime;
 		}
 
+		/**
+		 * 获取驱逐检查的时间间隔。
+		 * @return 驱逐检查间隔
+		 */
 		public Duration getEvictionInterval() {
 			return evictionInterval;
 		}
 
+		/**
+		 * 设置驱逐检查的时间间隔。
+		 * @param evictionInterval 驱逐检查间隔
+		 */
 		public void setEvictionInterval(Duration evictionInterval) {
 			this.evictionInterval = evictionInterval;
 		}
 
+		/**
+		 * 检查是否启用指标收集。
+		 * @return 是否启用指标收集
+		 */
 		public boolean isMetrics() {
 			return metrics;
 		}
 
+		/**
+		 * 设置是否启用指标收集。
+		 * @param metrics 是否启用指标收集
+		 */
 		public void setMetrics(boolean metrics) {
 			this.metrics = metrics;
 		}
 
+		/**
+		 * 返回该连接池配置的字符串表示。
+		 * @return 包含所有配置属性的字符串表示
+		 */
 		@Override
 		public String toString() {
 			return "Pool{" + "type=" + type + ", name='" + name + '\'' + ", maxConnections=" + maxConnections
@@ -294,19 +424,30 @@ public class HttpClientProperties {
 					+ maxLifeTime + ", evictionInterval=" + evictionInterval + ", metrics=" + metrics + '}';
 		}
 
+		/**
+		 * 连接池类型枚举。
+		 * <p>
+		 * 定义了 Netty HttpClient 支持的连接池类型。
+		 */
 		public enum PoolType {
 
 			/**
+			 * 弹性连接池类型。
+			 * <p>
 			 * Elastic pool type.
 			 */
 			ELASTIC,
 
 			/**
+			 * 固定大小连接池类型。
+			 * <p>
 			 * Fixed pool type.
 			 */
 			FIXED,
 
 			/**
+			 * 禁用连接池类型。
+			 * <p>
 			 * Disabled pool type.
 			 */
 			DISABLED
@@ -315,24 +456,33 @@ public class HttpClientProperties {
 
 	}
 
+	/**
+	 * Netty HttpClient 代理配置类。
+	 * <p>
+	 * 提供对 HTTP 代理、HTTPS 代理、SOCKS 代理的配置支持， 包括代理类型、主机、端口、认证信息和直连主机列表。
+	 */
 	public static class Proxy {
 
-		/** proxyType for proxy configuration of Netty HttpClient. */
+		/** 代理类型，默认为 HTTP */
 		private ProxyProvider.Proxy type = ProxyProvider.Proxy.HTTP;
 
-		/** Hostname for proxy configuration of Netty HttpClient. */
+		/** 代理服务器主机名 */
 		private String host;
 
-		/** Port for proxy configuration of Netty HttpClient. */
+		/** 代理服务器端口 */
 		private Integer port;
 
-		/** Username for proxy configuration of Netty HttpClient. */
+		/** 代理认证用户名 */
 		private String username;
 
-		/** Password for proxy configuration of Netty HttpClient. */
+		/** 代理认证密码 */
 		private String password;
 
 		/**
+		 * 直连（非代理）主机的正则表达式模式。
+		 * <p>
+		 * 配置直接连接绕过代理的主机列表。
+		 * <p>
 		 * Regular expression (Java) for a configured list of hosts. that should be
 		 * reached directly, bypassing the proxy
 		 */
@@ -374,18 +524,34 @@ public class HttpClientProperties {
 			return password;
 		}
 
+		/**
+		 * 设置代理认证密码。
+		 * @param password 代理密码
+		 */
 		public void setPassword(String password) {
 			this.password = password;
 		}
 
+		/**
+		 * 获取直连（非代理）主机正则表达式模式。
+		 * @return 直连主机正则表达式
+		 */
 		public String getNonProxyHostsPattern() {
 			return nonProxyHostsPattern;
 		}
 
+		/**
+		 * 设置直连（非代理）主机正则表达式模式。
+		 * @param nonProxyHostsPattern 直连主机正则表达式
+		 */
 		public void setNonProxyHostsPattern(String nonProxyHostsPattern) {
 			this.nonProxyHostsPattern = nonProxyHostsPattern;
 		}
 
+		/**
+		 * 返回该代理配置的字符串表示。
+		 * @return 包含所有配置属性的字符串表示
+		 */
 		@Override
 		public String toString() {
 			return "Proxy{" + "type='" + type + '\'' + "host='" + host + '\'' + ", port=" + port + ", username='"
@@ -429,44 +595,88 @@ public class HttpClientProperties {
 		/** Keystore provider for Netty HttpClient, optional field. */
 		private String keyStoreProvider;
 
-		/** Keystore password. */
+		/**
+		 * 密钥库密码。
+		 * <p>
+		 * Keystore password.
+		 */
 		private String keyStorePassword;
 
-		/** Key password, default is same as keyStorePassword. */
+		/**
+		 * 密钥密码，默认为 keyStorePassword。
+		 * <p>
+		 * Key password, default is same as keyStorePassword.
+		 */
 		private String keyPassword;
 
+		/**
+		 * 获取密钥库密码。
+		 * @return 密钥库密码
+		 */
 		public String getKeyStorePassword() {
 			return keyStorePassword;
 		}
 
+		/**
+		 * 设置密钥库密码。
+		 * @param keyStorePassword 密钥库密码
+		 */
 		public void setKeyStorePassword(String keyStorePassword) {
 			this.keyStorePassword = keyStorePassword;
 		}
 
+		/**
+		 * 获取密钥库类型。
+		 * @return 密钥库类型
+		 */
 		public String getKeyStoreType() {
 			return keyStoreType;
 		}
 
+		/**
+		 * 设置密钥库类型。
+		 * @param keyStoreType 密钥库类型
+		 */
 		public void setKeyStoreType(String keyStoreType) {
 			this.keyStoreType = keyStoreType;
 		}
 
+		/**
+		 * 获取密钥库提供者。
+		 * @return 密钥库提供者
+		 */
 		public String getKeyStoreProvider() {
 			return keyStoreProvider;
 		}
 
+		/**
+		 * 设置密钥库提供者。
+		 * @param keyStoreProvider 密钥库提供者
+		 */
 		public void setKeyStoreProvider(String keyStoreProvider) {
 			this.keyStoreProvider = keyStoreProvider;
 		}
 
+		/**
+		 * 获取密钥库路径。
+		 * @return 密钥库路径
+		 */
 		public String getKeyStore() {
 			return keyStore;
 		}
 
+		/**
+		 * 设置密钥库路径。
+		 * @param keyStore 密钥库路径
+		 */
 		public void setKeyStore(String keyStore) {
 			this.keyStore = keyStore;
 		}
 
+		/**
+		 * 获取密钥密码。
+		 * @return 密钥密码
+		 */
 		public String getKeyPassword() {
 			return keyPassword;
 		}
@@ -475,14 +685,27 @@ public class HttpClientProperties {
 			this.keyPassword = keyPassword;
 		}
 
+		/**
+		 * 获取受信任的 X.509 证书路径列表。
+		 * @return 受信任证书路径列表
+		 */
 		public List<String> getTrustedX509Certificates() {
 			return trustedX509Certificates;
 		}
 
+		/**
+		 * 设置受信任的 X.509 证书路径列表。
+		 * @param trustedX509 受信任证书路径列表
+		 */
 		public void setTrustedX509Certificates(List<String> trustedX509) {
 			this.trustedX509Certificates = trustedX509;
 		}
 
+		/**
+		 * 获取用于 TrustManager 的受信任 X.509 证书数组。
+		 * @return 信任证书数组
+		 * @deprecated 该方法将在后续版本中移除
+		 */
 		@Deprecated
 		public X509Certificate[] getTrustedX509CertificatesForTrustManager() {
 			try {
@@ -506,6 +729,11 @@ public class HttpClientProperties {
 			}
 		}
 
+		/**
+		 * 获取 KeyManagerFactory。
+		 * @return KeyManagerFactory 实例，若未配置密钥库则返回 null
+		 * @deprecated 该方法将在后续版本中移除
+		 */
 		@Deprecated
 		public KeyManagerFactory getKeyManagerFactory() {
 			try {
@@ -530,6 +758,11 @@ public class HttpClientProperties {
 			}
 		}
 
+		/**
+		 * 创建 KeyStore 实例。
+		 * @return 加载完成的 KeyStore
+		 * @deprecated 该方法将在后续版本中移除
+		 */
 		@Deprecated
 		public KeyStore createKeyStore() {
 			try {
@@ -554,6 +787,10 @@ public class HttpClientProperties {
 
 		// TODO: support configuration of other trust manager factories
 
+		/**
+		 * 检查是否使用不安全的信任管理器。
+		 * @return 是否使用不安全的信任管理器
+		 */
 		public boolean isUseInsecureTrustManager() {
 			return useInsecureTrustManager;
 		}
@@ -562,14 +799,26 @@ public class HttpClientProperties {
 			this.useInsecureTrustManager = useInsecureTrustManager;
 		}
 
+		/**
+		 * 获取 SSL 握手超时时间。
+		 * @return SSL 握手超时时间，默认 10000 毫秒
+		 */
 		public Duration getHandshakeTimeout() {
 			return handshakeTimeout;
 		}
 
+		/**
+		 * 设置 SSL 握手超时时间。
+		 * @param handshakeTimeout 握手超时时间
+		 */
 		public void setHandshakeTimeout(Duration handshakeTimeout) {
 			this.handshakeTimeout = handshakeTimeout;
 		}
 
+		/**
+		 * 获取 SSL close_notify 刷新超时时间。
+		 * @return close_notify 刷新超时时间，默认 3000 毫秒
+		 */
 		public Duration getCloseNotifyFlushTimeout() {
 			return closeNotifyFlushTimeout;
 		}
@@ -578,6 +827,10 @@ public class HttpClientProperties {
 			this.closeNotifyFlushTimeout = closeNotifyFlushTimeout;
 		}
 
+		/**
+		 * 获取 SSL close_notify 读取超时时间。
+		 * @return close_notify 读取超时时间，默认 0 毫秒
+		 */
 		public Duration getCloseNotifyReadTimeout() {
 			return closeNotifyReadTimeout;
 		}
@@ -596,6 +849,10 @@ public class HttpClientProperties {
 			this.defaultConfigurationType = defaultConfigurationType;
 		}
 
+		/**
+		 * 返回该 SSL 配置的字符串表示。
+		 * @return 包含所有配置属性的字符串表示
+		 */
 		@Override
 		public String toString() {
 			return new ToStringCreator(this).append("useInsecureTrustManager", useInsecureTrustManager)
@@ -608,9 +865,18 @@ public class HttpClientProperties {
 
 	}
 
+	/**
+	 * Netty HttpClient WebSocket 配置类。
+	 * <p>
+	 * 提供对 WebSocket 帧负载长度、代理 ping 等配置的管理。
+	 */
 	public static class Websocket {
 
-		/** Max frame payload length. */
+		/**
+		 * 最大帧负载长度。
+		 * <p>
+		 * Max frame payload length.
+		 */
 		private Integer maxFramePayloadLength;
 
 		/** Proxy ping frames to downstream services, defaults to true. */

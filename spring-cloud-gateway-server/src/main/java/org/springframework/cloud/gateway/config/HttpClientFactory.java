@@ -57,22 +57,34 @@ import static org.springframework.cloud.gateway.config.HttpClientProperties.Pool
 import static org.springframework.cloud.gateway.config.HttpClientProperties.Pool.PoolType.FIXED;
 
 /**
- * Factory Bean that allows users to extend and customize parts of the HttpClient. Also
- * allows for testing the configuration of the HttpClient.
+ * HttpClient 工厂 Bean，允许用户扩展和自定义 HttpClient 的各个部分。
+ * <p>
+ * 该工厂类负责创建和配置 Reactor Netty 的 HttpClient 实例，支持连接池、 SSL/TLS、代理、HTTP/2 等功能的配置。同时也便于对
+ * HttpClient 配置进行测试。
  *
  * @author Spencer Gibb
  * @since 3.1.1
  */
 public class HttpClientFactory extends AbstractFactoryBean<HttpClient> {
 
+	/** HTTP 客户端配置属性 */
 	protected final HttpClientProperties properties;
 
+	/** 服务器配置属性 */
 	protected final ServerProperties serverProperties;
 
+	/** SSL 配置器 */
 	protected final HttpClientSslConfigurer sslConfigurer;
 
+	/** HttpClient 自定义器列表 */
 	protected final List<HttpClientCustomizer> customizers;
 
+	/**
+	 * 创建 HttpClientFactory 实例（无 SSL 配置）。
+	 * @param properties HTTP 客户端配置属性
+	 * @param serverProperties 服务器配置属性
+	 * @param customizers HttpClient 自定义器列表
+	 */
 	public HttpClientFactory(HttpClientProperties properties, ServerProperties serverProperties,
 			List<HttpClientCustomizer> customizers) {
 		this.properties = properties;
@@ -81,6 +93,13 @@ public class HttpClientFactory extends AbstractFactoryBean<HttpClient> {
 		this.customizers = customizers;
 	}
 
+	/**
+	 * 创建 HttpClientFactory 实例（包含 SSL 配置）。
+	 * @param properties HTTP 客户端配置属性
+	 * @param serverProperties 服务器配置属性
+	 * @param sslConfigurer SSL 配置器
+	 * @param customizers HttpClient 自定义器列表
+	 */
 	public HttpClientFactory(HttpClientProperties properties, ServerProperties serverProperties,
 			HttpClientSslConfigurer sslConfigurer, List<HttpClientCustomizer> customizers) {
 		this.properties = properties;
@@ -89,11 +108,19 @@ public class HttpClientFactory extends AbstractFactoryBean<HttpClient> {
 		this.customizers = customizers;
 	}
 
+	/**
+	 * 获取该工厂创建的对象类型。
+	 * @return HttpClient.class
+	 */
 	@Override
 	public Class<?> getObjectType() {
 		return HttpClient.class;
 	}
 
+	/**
+	 * 创建并配置 HttpClient 实例。
+	 * @return 配置完成的 HttpClient 实例
+	 */
 	@Override
 	protected HttpClient createInstance() {
 		// configure pool resources
@@ -299,6 +326,11 @@ public class HttpClientFactory extends AbstractFactoryBean<HttpClient> {
 		return spec;
 	}
 
+	/**
+	 * 构建连接提供程序，根据配置创建固定池、弹性池或禁用池。
+	 * @param properties HTTP 客户端配置属性
+	 * @return 配置完成的 ConnectionProvider 实例
+	 */
 	protected ConnectionProvider buildConnectionProvider(HttpClientProperties properties) {
 		HttpClientProperties.Pool pool = properties.getPool();
 

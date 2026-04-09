@@ -21,13 +21,12 @@ import reactor.core.publisher.Mono;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * Contract for interception-style, chained processing of gateway requests that may be
- * used to implement cross-cutting, application-agnostic requirements such as security,
- * timeouts, and others.
- *
- * Only applies to matched gateway routes.
- *
- * Copied from framework WebFilter
+ * 全局过滤器接口，用于拦截式、链式处理网关请求。
+ * <p>
+ * 与 {@link GatewayFilter} 不同，全局过滤器作用于所有匹配的路由，无需为每条路由单独配置。
+ * 可用于实现横切、应用无关的需求，如安全认证、全局日志、监控指标等。
+ * <p>
+ * 参照 Spring Framework 的 WebFilter 接口设计，仅作用于已匹配的网关路由。
  *
  * @author Rossen Stoyanchev
  * @since 5.0
@@ -35,11 +34,10 @@ import org.springframework.web.server.ServerWebExchange;
 public interface GlobalFilter {
 
 	/**
-	 * Process the Web request and (optionally) delegate to the next {@code GatewayFilter}
-	 * through the given {@link GatewayFilterChain}.
-	 * @param exchange the current server exchange
-	 * @param chain provides a way to delegate to the next filter
-	 * @return {@code Mono<Void>} to indicate when request processing is complete
+	 * 处理 Web 请求，并可选地通过给定的 {@link GatewayFilterChain} 将请求委托给下一个过滤器。
+	 * @param exchange 当前服务器 Web 交换对象，包含请求和响应信息
+	 * @param chain 过滤器链，提供将请求委托给下一个过滤器的能力
+	 * @return {@code Mono<Void>}，表示请求处理完成的信号
 	 */
 	Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain);
 

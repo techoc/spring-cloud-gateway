@@ -31,10 +31,29 @@ import org.springframework.web.util.UriComponentsBuilder;
 import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 
 /**
+ * 添加请求参数过滤器工厂。
+ * <p>
+ * 该过滤器向请求的查询字符串中添加指定的参数。 支持 SpEL 表达式动态取值，通过 {@link ServerWebExchangeUtils#expand} 方法解析。
+ * <p>
+ * 配置示例（YAML）： <pre>
+ * filters:
+ *   - AddRequestParameter=name, value
+ *   - AddRequestParameter=debug, true
+ * </pre>
+ * <p>
+ * 注意：参数值未进行 URL 编码，使用时需确保值不包含特殊字符。
+ *
  * @author Spencer Gibb
  */
 public class AddRequestParameterGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
+	/**
+	 * 创建添加请求参数过滤器。
+	 * <p>
+	 * 过滤器将配置的参数追加到请求的查询字符串中。 保留原有的查询参数，在末尾添加新参数。
+	 * @param config 名称-值配置对象
+	 * @return 网关过滤器实例
+	 */
 	@Override
 	public GatewayFilter apply(NameValueConfig config) {
 		return new GatewayFilter() {
@@ -44,20 +63,24 @@ public class AddRequestParameterGatewayFilterFactory extends AbstractNameValueGa
 				StringBuilder query = new StringBuilder();
 				String originalQuery = uri.getRawQuery();
 
+				// 保留原有查询参数
 				if (StringUtils.hasText(originalQuery)) {
 					query.append(originalQuery);
+					// 若原有参数不以 & 结尾，添加分隔符
 					if (originalQuery.charAt(originalQuery.length() - 1) != '&') {
 						query.append('&');
 					}
 				}
 
+				// 解析值中的 SpEL 表达式
 				String value = ServerWebExchangeUtils.expand(exchange, config.getValue());
-				// TODO urlencode?
+				// TODO: 是否需要进行 URL 编码？
 				query.append(config.getName());
 				query.append('=');
 				query.append(value);
 
 				try {
+					// 构建新的 URI
 					URI newUri = UriComponentsBuilder.fromUri(uri).replaceQuery(query.toString()).build(true).toUri();
 
 					ServerHttpRequest request = exchange.getRequest().mutate().uri(newUri).build();

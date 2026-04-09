@@ -33,15 +33,37 @@ import org.springframework.cloud.gateway.filter.factory.SpringCloudCircuitBreake
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * OnEnabledFilterTests - 过滤器名称规范化测试类
+ *
+ * 本测试类验证OnEnabledFilter对过滤器类名的规范化逻辑： -
+ * 将GatewayFilterFactory类名转换为spring.cloud.gateway.filter.{name}格式的属性名
+ *
+ * 例如： - AddRequestHeaderGatewayFilterFactory -> filter.add-request-header -
+ * CircuitBreakerGatewayFilterFactory -> filter.circuit-breaker
+ *
+ * @author test
+ */
 class OnEnabledFilterTests {
 
+	/** 待测试的OnEnabledFilter实例 */
 	private OnEnabledFilter onEnabledFilter;
 
+	/**
+	 * setUp - 测试前准备
+	 *
+	 * 初始化OnEnabledFilter实例
+	 */
 	@BeforeEach
 	void setUp() {
 		this.onEnabledFilter = new OnEnabledFilter();
 	}
 
+	/**
+	 * shouldNormalizeFiltersNames - 测试过滤器名称规范化
+	 *
+	 * 验证各种GatewayFilterFactory的类名能够被正确转换为配置属性名格式
+	 */
 	@Test
 	void shouldNormalizeFiltersNames() {
 		List<Class<? extends GatewayFilterFactory<?>>> predicates = Arrays.asList(

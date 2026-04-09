@@ -16,6 +16,23 @@
 
 package org.springframework.cloud.gateway.support;
 
+/**
+ * 异常类，当检测到 Spring MVC 出现在类路径中时抛出。
+ * <p>
+ * Spring Cloud Gateway 基于 Spring WebFlux（响应式编程模型），与基于 Servlet 的 Spring MVC
+ * 存在冲突。如果在类路径中同时存在 spring-boot-starter-web 和
+ * spring-cloud-starter-gateway，会导致应用无法正常启动，此时抛出此异常。
+ * </p>
+ * <p>
+ * 解决方式：
+ * <ul>
+ * <li>设置 {@code spring.main.web-application-type=reactive}</li>
+ * <li>移除 spring-boot-starter-web 依赖</li>
+ * </ul>
+ * </p>
+ *
+ * @see MvcFoundOnClasspathFailureAnalyzer
+ */
 public class MvcFoundOnClasspathException extends RuntimeException {
 
 }

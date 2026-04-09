@@ -22,11 +22,11 @@ import org.springframework.cloud.gateway.support.ShortcutConfigurable;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * Contract for interception-style, chained processing of Web requests that may be used to
- * implement cross-cutting, application-agnostic requirements such as security, timeouts,
- * and others. Specific to a Gateway
- *
- * Copied from WebFilter
+ * 网关过滤器接口，用于拦截式、链式处理 Web 请求。
+ * <p>
+ * 可用于实现横切、应用无关的需求，如安全控制、超时处理等。 该接口专用于 Spring Cloud Gateway，参照 WebFilter 接口设计。
+ * <p>
+ * 实现类可通过 {@link GatewayFilterChain} 将请求委托给链中的下一个过滤器， 也可直接终止请求处理并返回响应。
  *
  * @author Rossen Stoyanchev
  * @since 5.0
@@ -34,21 +34,20 @@ import org.springframework.web.server.ServerWebExchange;
 public interface GatewayFilter extends ShortcutConfigurable {
 
 	/**
-	 * Name key.
+	 * 过滤器名称的配置键常量。
 	 */
 	String NAME_KEY = "name";
 
 	/**
-	 * Value key.
+	 * 过滤器值的配置键常量。
 	 */
 	String VALUE_KEY = "value";
 
 	/**
-	 * Process the Web request and (optionally) delegate to the next {@code WebFilter}
-	 * through the given {@link GatewayFilterChain}.
-	 * @param exchange the current server exchange
-	 * @param chain provides a way to delegate to the next filter
-	 * @return {@code Mono<Void>} to indicate when request processing is complete
+	 * 处理 Web 请求，并可选地通过给定的 {@link GatewayFilterChain} 将请求委托给下一个过滤器。
+	 * @param exchange 当前服务器 Web 交换对象，包含请求和响应信息
+	 * @param chain 过滤器链，提供将请求委托给下一个过滤器的能力
+	 * @return {@code Mono<Void>}，表示请求处理完成的信号
 	 */
 	Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain);
 

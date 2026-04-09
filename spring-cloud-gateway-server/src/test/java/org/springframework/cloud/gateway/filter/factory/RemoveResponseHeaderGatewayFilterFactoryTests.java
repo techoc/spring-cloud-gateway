@@ -30,16 +30,33 @@ import org.springframework.test.annotation.DirtiesContext;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+/**
+ * RemoveResponseHeaderGatewayFilterFactory 集成测试类
+ *
+ * 本测试类用于验证 RemoveResponseHeaderGatewayFilterFactory 的响应头移除功能，包括： - 测试移除指定的响应头 - 测试
+ * toString 格式输出
+ *
+ * RemoveResponseHeaderGatewayFilterFactory 负责在响应返回前移除指定的 HTTP 响应头，
+ * 常用于移除敏感信息（如后端服务器信息）或避免重复的响应头。
+ *
+ * @author 译者：Spring Cloud Gateway 团队
+ */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class RemoveResponseHeaderGatewayFilterFactoryTests extends BaseWebClientTests {
 
+	/**
+	 * 测试移除响应头的功能 验证：X-Request-Foo 响应头应不存在于响应中
+	 */
 	@Test
 	public void removeResponseHeaderFilterWorks() {
 		testClient.get().uri("/headers").header("Host", "www.removereresponseheader.org").exchange().expectStatus()
 				.isOk().expectHeader().doesNotExist("X-Request-Foo");
 	}
 
+	/**
+	 * 测试过滤器的 toString 格式输出 验证：toString 应包含配置的名称
+	 */
 	@Test
 	public void toStringFormat() {
 		NameConfig config = new NameConfig();

@@ -23,30 +23,73 @@ import org.springframework.cloud.gateway.handler.predicate.RoutePredicateFactory
 import org.springframework.cloud.gateway.support.NameUtils;
 import org.springframework.web.server.ServerWebExchange;
 
+/**
+ * {@link OnEnabledComponent} 的具体实现，用于控制 {@link RoutePredicateFactory} Bean 的条件注册。
+ * <p>
+ * 此类与 {@link ConditionalOnEnabledPredicate} 注解配合使用， 通过检查配置属性
+ * {@code spring.cloud.gateway.predicate.<predicate-name>.enabled} 来决定 路由谓词工厂 Bean
+ * 是否应该被注册。
+ *
+ * @see ConditionalOnEnabledPredicate
+ * @see OnEnabledComponent
+ */
 public class OnEnabledPredicate extends OnEnabledComponent<RoutePredicateFactory<?>> {
 
+	/**
+	 * 将路由谓词工厂类名规范化为配置属性中的名称格式。
+	 * <p>
+	 * 生成的配置属性键格式为： {@code spring.cloud.gateway.predicate.<normalized-name>.enabled}
+	 * @param predicateClass 路由谓词工厂类
+	 * @return 规范化的属性名称前缀（不含前缀和后缀）
+	 */
 	@Override
 	protected String normalizeComponentName(Class<? extends RoutePredicateFactory<?>> predicateClass) {
 		return "predicate." + NameUtils.normalizeRoutePredicateNameAsProperty(predicateClass);
 	}
 
+	/**
+	 * 返回此条件对应的注解类。
+	 * @return {@link ConditionalOnEnabledPredicate} 类
+	 */
 	@Override
 	protected Class<?> annotationClass() {
 		return ConditionalOnEnabledPredicate.class;
 	}
 
+	/**
+	 * 返回注解 value 属性的默认值类。
+	 * @return {@link DefaultValue} 类
+	 */
 	@Override
 	protected Class<? extends RoutePredicateFactory<?>> defaultValueClass() {
 		return DefaultValue.class;
 	}
 
+	/**
+	 * 默认值标记类，用于标识注解的 value 属性未被显式指定。
+	 * <p>
+	 * 当 {@link ConditionalOnEnabledPredicate} 注解未指定 value 属性时使用此类作为默认值。
+	 * 此类永远不会被实例化，其任何方法调用都会抛出 {@link UnsupportedOperationException}。
+	 */
 	static class DefaultValue implements RoutePredicateFactory<Object> {
 
+		/**
+		 * 不支持的操作。
+		 * @param consumer 配置消费者
+		 * @return 不返回任何值
+		 * @throws UnsupportedOperationException 始终抛出此异常
+		 */
 		@Override
 		public Predicate<ServerWebExchange> apply(Consumer<Object> consumer) {
 			throw new UnsupportedOperationException("class DefaultValue is never meant to be intantiated");
 		}
 
+		/**
+		 * 不支持的操作。
+		 * @param config 配置对象
+		 * @return 不返回任何值
+		 * @throws UnsupportedOperationException 始终抛出此异常
+		 */
 		@Override
 		public Predicate<ServerWebExchange> apply(Object config) {
 			throw new UnsupportedOperationException("class DefaultValue is never meant to be intantiated");

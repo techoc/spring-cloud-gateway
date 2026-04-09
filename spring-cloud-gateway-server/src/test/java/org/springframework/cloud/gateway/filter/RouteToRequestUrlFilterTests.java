@@ -39,10 +39,21 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_SCHEME_PREFIX_ATTR;
 
 /**
+ * RouteToRequestUrlFilter 单元测试类
+ *
+ * 本测试类用于验证 RouteToRequestUrlFilter 的路由 URL 转换功能，包括： - 测试标准 HTTP/HTTPS URL 的转换 - 测试 lb://
+ * 负载均衡协议的处理 - 测试带 lb: 前缀的协议转换 - 测试 URL 参数的正确处理（编码/非编码） - 测试 URI 匹配器的工作逻辑
+ *
+ * RouteToRequestUrlFilter 负责将路由定义中的 URI 转换为实际的请求 URL， 支持 lb:// 协议（负载均衡）和 lb:http:// 前缀协议。
+ *
  * @author Spencer Gibb
+ * @author 译者：Spring Cloud Gateway 团队
  */
 public class RouteToRequestUrlFilterTests {
 
+	/**
+	 * 测试标准 HTTP URL 转换的正常路径 验证：路由 URI 应正确转换为请求 URL，保持协议、主机和参数
+	 */
 	@Test
 	public void happyPath() {
 		MockServerHttpRequest request = MockServerHttpRequest.get("http://localhost/get?a=b").build();
@@ -52,6 +63,10 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(uri).hasScheme("http").hasHost("myhost").hasPath("/get").hasParameter("a", "b");
 	}
 
+	/**
+	 * 测试 lb:// 负载均衡协议的转换 验证：lb://myhost 应保持 lb 协议，由后续的 ReactiveLoadBalancerClientFilter
+	 * 处理
+	 */
 	@Test
 	public void happyPathLb() {
 		MockServerHttpRequest request = MockServerHttpRequest.get("http://localhost/getb").build();
@@ -61,12 +76,18 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(uri).hasScheme("lb").hasHost("myhost");
 	}
 
+	/**
+	 * 测试包含无效主机名（带下划线）的 URI 抛出异常 验证：lb://my_host 格式应抛出 IllegalStateException
+	 */
 	@Test(expected = IllegalStateException.class)
 	public void invalidHost() {
 		MockServerHttpRequest request = MockServerHttpRequest.get("http://localhost/getb").build();
 		testFilter(request, "lb://my_host");
 	}
 
+	/**
+	 * 测试 lb:http:// 格式的前缀协议转换 验证：lb:http://myhost 应转换为 http://myhost，同时在属性中保留 lb 前缀
+	 */
 	@Test
 	public void happyPathLbPlusScheme() {
 		MockServerHttpRequest request = MockServerHttpRequest.get("http://localhost/getb").build();
@@ -78,6 +99,9 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(schemePrefix).isEqualTo("lb");
 	}
 
+	/**
+	 * 测试不包含查询参数的 URL 转换 验证：转换后应保持协议和主机，无参数
+	 */
 	@Test
 	public void noQueryParams() {
 		MockServerHttpRequest request = MockServerHttpRequest.get("http://localhost/get").build();
@@ -87,6 +111,9 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(uri).hasScheme("http").hasHost("myhost");
 	}
 
+	/**
+	 * 测试已编码参数的 URL 转换不会导致双重编码 验证：原始编码的查询参数应保持不变，不会被重复编码
+	 */
 	@Test
 	public void encodedParameters() {
 		URI url = UriComponentsBuilder.fromUriString("http://localhost/get?a=b&c=d[]").buildAndExpand().encode()
@@ -107,6 +134,9 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(uri.getRawQuery()).isEqualTo("a=b&c=d%5B%5D");
 	}
 
+	/**
+	 * 测试部分编码参数的 URL 转换行为 验证：部分编码的参数可能产生双重编码，这是预期行为 注意：此测试仅在 Spring Boot 2.3 版本下运行
+	 */
 	@Test
 	public void partialEncodedParameters() {
 		assumeTrue("partialEncodedParameters ignored for boot 2.2", SpringBootVersion.getVersion().startsWith("2.3."));
@@ -134,6 +164,9 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(uri.getRawQuery()).isEqualTo("key[]=test=%2520key&start=1533108081");
 	}
 
+	/**
+	 * 测试 URL 路径中包含编码空格的转换 验证：编码的空格（%20）应保持不变，不会被双重编码
+	 */
 	@Test
 	public void encodedUrl() {
 		URI url = UriComponentsBuilder.fromUriString("http://localhost/abc def/get").buildAndExpand().encode().toUri();
@@ -153,6 +186,9 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(uri.getRawPath()).isEqualTo("/abc%20def/get");
 	}
 
+	/**
+	 * 测试未编码参数的 URL 转换 验证：未编码的参数应保持原样，不进行额外编码
+	 */
 	@Test
 	public void unencodedParameters() {
 		URI url = URI.create("http://localhost/get?a=b&c=d[]");
@@ -171,12 +207,20 @@ public class RouteToRequestUrlFilterTests {
 		assertThat(uri.getRawQuery()).isEqualTo("a=b&c=d[]");
 	}
 
+	/**
+	 * 测试 hasAnotherScheme 方法的 URI 匹配逻辑 验证：lb:a123:stuff 等多协议格式应匹配，lb:a 等简单格式不应匹配
+	 */
 	@Test
 	public void matcherWorks() {
 		testMatcher(true, "lb:a123:stuff", "lb:abc:stuff", "lb:a.bc:stuff", "lb:a-bc:stuff", "lb:a+bc:stuff");
 		testMatcher(false, "lb:a", "lb:a123", "lb:123:stuff", "lb:a//:stuff");
 	}
 
+	/**
+	 * 测试 URI 匹配器对给定 URI 列表的匹配结果
+	 * @param shouldMatch 预期是否应匹配
+	 * @param uris 待测试的 URI 字符串数组
+	 */
 	private void testMatcher(boolean shouldMatch, String... uris) {
 		for (String s : uris) {
 			URI uri = URI.create(s);
@@ -185,6 +229,14 @@ public class RouteToRequestUrlFilterTests {
 		}
 	}
 
+	/**
+	 * 执行过滤器测试的辅助方法
+	 *
+	 * 创建模拟的 ServerWebExchange，配置路由信息， 然后应用 RouteToRequestUrlFilter 并返回转换后的 exchange。
+	 * @param request 模拟的 HTTP 请求
+	 * @param routeUri 路由目标 URI
+	 * @return 应用过滤器后的 ServerWebExchange
+	 */
 	private ServerWebExchange testFilter(MockServerHttpRequest request, String routeUri) {
 		Route value = Route.async().id("1").uri(URI.create(routeUri)).order(0).predicate(swe -> true).build();
 
