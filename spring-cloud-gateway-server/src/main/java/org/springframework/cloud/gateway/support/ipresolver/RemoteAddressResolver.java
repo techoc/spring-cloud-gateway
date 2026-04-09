@@ -16,9 +16,9 @@
 
 package org.springframework.cloud.gateway.support.ipresolver;
 
-import java.net.InetSocketAddress;
-
 import org.springframework.web.server.ServerWebExchange;
+
+import java.net.InetSocketAddress;
 
 /**
  * 远程地址解析器接口，用于获取客户端的真实 IP 地址。
@@ -44,7 +44,9 @@ public interface RemoteAddressResolver {
 	/**
 	 * 从请求交换中解析客户端的远程地址。
 	 * <p>
-	 * 默认实现直接返回 {@link  org.springframework.http.server.reactive.ServerHttpRequest#getRemoteAddress()}， 即底层网络连接中的远程地址。
+	 * 默认实现直接返回
+	 * {@link org.springframework.http.server.reactive.ServerHttpRequest#getRemoteAddress()}，
+	 * 即底层网络连接中的远程地址。
 	 * </p>
 	 * @param exchange 当前请求交换对象
 	 * @return 客户端的远程地址，包含 IP 和端口

@@ -16,17 +16,16 @@
 
 package org.springframework.cloud.gateway.route;
 
-import java.util.UUID;
-import java.util.function.Function;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.util.AlternativeJdkIdGenerator;
+import org.springframework.util.IdGenerator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import org.springframework.util.AlternativeJdkIdGenerator;
-import org.springframework.util.IdGenerator;
+import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * 组合路由定义定位器，将多个路由定义定位器的结果合并为一个流。
@@ -37,8 +36,8 @@ import org.springframework.util.IdGenerator;
  * <li>为未设置 ID 的路由定义自动生成 UUID</li>
  * </ul>
  * <p>
- * 使用 {@link Flux#flatMapSequential(Function)} 保证路由定义的顺序性。 默认使用 {@link AlternativeJdkIdGenerator}
- * 生成路由 ID，可通过构造方法自定义。
+ * 使用 {@link Flux#flatMapSequential(Function)} 保证路由定义的顺序性。 默认使用
+ * {@link AlternativeJdkIdGenerator} 生成路由 ID，可通过构造方法自定义。
  *
  * @author Spencer Gibb
  */
