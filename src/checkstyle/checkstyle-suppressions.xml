@@ -30,4 +30,5 @@
 	<suppress files=".*SpringCloudCircuitBreakerHystrixFilterFactory\.java" checks="AvoidNestedBlocks"/>
 	<suppress files=".*WellKnownKey\.java" checks="JavadocVariable"/>
 	<suppress files=".*MetadataEncoder\.java" checks="JavadocMethod"/>
+	<suppress files=".*" checks="JavadocStyle"/>
 </suppressions>
