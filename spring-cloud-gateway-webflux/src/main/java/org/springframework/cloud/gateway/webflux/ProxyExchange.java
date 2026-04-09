@@ -49,10 +49,10 @@ import org.springframework.web.reactive.function.client.WebClient.RequestBodySpe
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * A <code>@RequestMapping</code> argument type that can proxy the request to a backend.
- * Spring will inject one of these into your MVC handler method, and you get return a
- * <code>ResponseEntity</code> that you get from one of the HTTP methods {@link #get()},
- * {@link #post()}, {@link #put()}, {@link #patch()}, {@link #delete()} etc. Example:
+ * 一个可以在 <code>@RequestMapping</code> 方法中作为参数使用的代理交换类，能够将请求转发到后端服务。
+ * Spring 会自动将该类的实例注入到你的 MVC 处理器方法中，你可以通过调用 {@link #get()}、
+ * {@link #post()}、{@link #put()}、{@link #patch()}、{@link #delete()} 等 HTTP 方法
+ * 来返回一个 <code>ResponseEntity</code>。示例：
  *
  * <pre>
  * &#64;GetMapping("/proxy/{id}")
@@ -63,25 +63,21 @@ import org.springframework.web.server.ServerWebExchange;
  * </pre>
  *
  * <p>
- * By default the incoming request body and headers are sent intact to the downstream
- * service (with the exception of "sensitive" headers). To manipulate the downstream
- * request there are "builder" style methods in {@link ProxyExchange}, but only the
- * {@link #uri(String)} is mandatory. You can change the sensitive headers by calling the
- * {@link #sensitive(String...)} method (Authorization and Cookie are sensitive by
- * default).
+ * 默认情况下，传入的请求体和请求头会原封不动地发送到下游服务（"敏感"请求头除外）。
+ * 要操作下游请求，可以使用 {@link ProxyExchange} 中的"构建器"风格方法，
+ * 但只有 {@link #uri(String)} 是必需的。你可以通过调用 {@link #sensitive(String...)} 方法
+ * 来修改敏感请求头（Authorization 和 Cookie 默认就是敏感的）。
  * </p>
  * <p>
- * The type parameter <code>T</code> in <code>ProxyExchange&lt;T&gt;</code> is the type of
- * the response body, so it comes out in the {@link ResponseEntity} that you return from
- * your <code>@RequestMapping</code>. If you don't care about the type of the request and
- * response body (e.g. if it's just a passthru) then use a wildcard, or
- * <code>byte[]</code> (<code>Object</code> probably won't work unless you provide a
- * converter). Use a concrete type if you want to transform or manipulate the response, or
- * if you want to assert that it is convertible to the type you declare.
+ * <code>ProxyExchange&lt;T&gt;</code> 中的类型参数 <code>T</code> 是响应体的类型，
+ * 因此它会出现在你从 <code>@RequestMapping</code> 返回的 <code>ResponseEntity</code> 中。
+ * 如果你不关心请求和响应体的类型（例如只是简单透传），那么可以使用通配符或 <code>byte[]</code>
+ * （除非你提供转换器，否则 <code>Object</code> 可能无法工作）。
+ * 如果你想要转换或操作响应，或者想要断言它可以转换为你声明的类型，请使用具体类型。
  * </p>
  * <p>
- * To manipulate the response use the overloaded HTTP methods with a <code>Function</code>
- * argument and pass in code to transform the response. E.g.
+ * 要操作响应，可以使用带有 <code>Function</code> 参数的重载 HTTP 方法，
+ * 并传入代码来转换响应。例如：
  *
  * <pre>
  * &#64;PostMapping("/proxy")
@@ -98,12 +94,10 @@ import org.springframework.web.server.ServerWebExchange;
  *
  * </p>
  * <p>
- * The full machinery of Spring {@link HttpMessageConverter message converters} is applied
- * to the incoming request and response and also to the backend request. If you need
- * additional converters then they need to be added upstream in the MVC configuration and
- * also to the {@link WebClient} that is used in the backend calls (see the
- * {@link ProxyExchange#ProxyExchange(WebClient, ServerWebExchange, BindingContext, Type)
- * constructor} for details).
+ * Spring 的 {@link HttpMessageConverter 消息转换器}的完整机制会应用于
+ * 传入的请求和响应以及后端请求。如果你需要额外的转换器，
+ * 那么它们需要在 MVC 配置的上游添加，同时也需要添加到用于后端调用的 {@link WebClient} 中
+ * （详见 {@link ProxyExchange#ProxyExchange(WebClient, ServerWebExchange, BindingContext, Type) 构造函数}）。
  * </p>
  *
  * @author Dave Syer
@@ -112,31 +106,49 @@ import org.springframework.web.server.ServerWebExchange;
 public class ProxyExchange<T> {
 
 	/**
-	 * Contains headers that are considered case-sensitive by default.
+	 * 默认情况下被认为是敏感的请求头名称集合。
+	 * 这些请求头（如 cookie、authorization）默认不会被转发到下游服务。
 	 */
 	public static Set<String> DEFAULT_SENSITIVE = Collections
 			.unmodifiableSet(new HashSet<>(Arrays.asList("cookie", "authorization")));
 
+	/** HTTP 请求方法，用于确定使用哪种 HTTP 操作。 */
 	private HttpMethod httpMethod;
 
+	/** 后端服务的 URI 地址。 */
 	private URI uri;
 
+	/** WebClient 实例，用于执行 HTTP 请求。 */
 	private WebClient rest;
 
+	/** 请求体发布者，用于向下游服务发送请求数据。 */
 	private Publisher<Object> body;
 
+	/** 标记请求是否包含请求体。 */
 	private boolean hasBody = false;
 
+	/** 服务器 Web 交换对象，包含当前请求和响应信息。 */
 	private ServerWebExchange exchange;
 
+	/** 数据绑定上下文，用于处理请求体绑定和验证。 */
 	private BindingContext bindingContext;
 
+	/** 敏感请求头名称集合，这些请求头不会被转发到下游。 */
 	private Set<String> sensitive;
 
+	/** 要发送到下游服务的 HTTP 请求头。 */
 	private HttpHeaders headers = new HttpHeaders();
 
+	/** 响应体的类型信息。 */
 	private Type responseType;
 
+	/**
+	 * 构造函数，初始化代理交换器。
+	 * @param rest WebClient 实例，用于执行 HTTP 请求
+	 * @param exchange 服务器 Web 交换对象，包含当前请求信息
+	 * @param bindingContext 数据绑定上下文，用于处理请求体绑定
+	 * @param type 响应体的类型信息
+	 */
 	public ProxyExchange(WebClient rest, ServerWebExchange exchange, BindingContext bindingContext, Type type) {
 		this.exchange = exchange;
 		this.bindingContext = bindingContext;
@@ -175,10 +187,12 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * Sets a header for the downstream call.
-	 * @param name Header name
-	 * @param value Header values
-	 * @return this for convenience
+	 * 为下游调用设置请求头。
+	 * 该方法允许自定义要转发到后端服务的 HTTP 请求头信息。
+	 *
+	 * @param name 请求头名称
+	 * @param value 请求头值，支持多个值
+	 * @return 当前 ProxyExchange 实例，便于链式调用
 	 */
 	public ProxyExchange<T> header(String name, String... value) {
 		this.headers.put(name, Arrays.asList(value));
@@ -229,10 +243,20 @@ public class ProxyExchange<T> {
 		return this;
 	}
 
+	/**
+	 * 获取当前请求的路径。
+	 * @return 请求路径值
+	 */
 	public String path() {
 		return exchange.getRequest().getPath().pathWithinApplication().value();
 	}
 
+	/**
+	 * 获取当前请求的路径，并去除指定的前缀。
+	 * @param prefix 要去除的路径前缀
+	 * @return 去除前缀后的路径
+	 * @throws IllegalArgumentException 如果路径不以指定前缀开头
+	 */
 	public String path(String prefix) {
 		String path = path();
 		if (!path.startsWith(prefix)) {
@@ -241,69 +265,144 @@ public class ProxyExchange<T> {
 		return path.substring(prefix.length());
 	}
 
+	/**
+	 * 向下游服务发送 GET 请求。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> get() {
 		RequestEntity<?> requestEntity = headers((BodyBuilder) RequestEntity.get(uri)).build();
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 向下游服务发送 GET 请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> get(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return get().map(converter::apply);
 	}
 
+	/**
+	 * 向下游服务发送 HEAD 请求。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> head() {
 		RequestEntity<?> requestEntity = headers((BodyBuilder) RequestEntity.head(uri)).build();
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 向下游服务发送 HEAD 请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> head(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return head().map(converter::apply);
 	}
 
+	/**
+	 * 向下游服务发送 OPTIONS 请求。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> options() {
 		RequestEntity<?> requestEntity = headers((BodyBuilder) RequestEntity.options(uri)).build();
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 向下游服务发送 OPTIONS 请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> options(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return options().map(converter::apply);
 	}
 
+	/**
+	 * 向下游服务发送 POST 请求。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> post() {
 		RequestEntity<Object> requestEntity = headers(RequestEntity.post(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 向下游服务发送 POST 请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> post(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return post().map(converter::apply);
 	}
 
+	/**
+	 * 向下游服务发送 DELETE 请求。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> delete() {
 		RequestEntity<Object> requestEntity = headers((BodyBuilder) RequestEntity.delete(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 向下游服务发送 DELETE 请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> delete(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return delete().map(converter::apply);
 	}
 
+	/**
+	 * 向下游服务发送 PUT 请求。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> put() {
 		RequestEntity<Object> requestEntity = headers(RequestEntity.put(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 向下游服务发送 PUT 请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> put(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return put().map(converter::apply);
 	}
 
+	/**
+	 * 向下游服务发送 PATCH 请求。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> patch() {
 		RequestEntity<Object> requestEntity = headers(RequestEntity.patch(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 向下游服务发送 PATCH 请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> patch(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return patch().map(converter::apply);
 	}
 
+	/**
+	 * 根据当前请求的 HTTP 方法自动转发请求。
+	 * 该方法会根据原始的 HTTP 方法（GET、POST、PUT 等）自动选择对应的代理方法。
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	public Mono<ResponseEntity<T>> forward() {
 		switch (httpMethod) {
 		case GET:
@@ -325,6 +424,12 @@ public class ProxyExchange<T> {
 		}
 	}
 
+	/**
+	 * 根据当前请求的 HTTP 方法自动转发请求，并使用转换器处理响应。
+	 * @param converter 响应转换函数
+	 * @param <S> 转换后的响应类型
+	 * @return 包含转换后响应数据的 Mono 对象
+	 */
 	public <S> Mono<ResponseEntity<S>> forward(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		switch (httpMethod) {
 		case GET:
@@ -346,6 +451,11 @@ public class ProxyExchange<T> {
 		}
 	}
 
+	/**
+	 * 执行实际的 HTTP 交换请求。
+	 * @param requestEntity 要发送的请求实体
+	 * @return 包含响应数据的 Mono 对象
+	 */
 	private Mono<ResponseEntity<T>> exchange(RequestEntity<?> requestEntity) {
 		Type type = this.responseType;
 		RequestBodySpec builder = rest.method(requestEntity.getMethod()).uri(requestEntity.getUrl())
@@ -371,18 +481,33 @@ public class ProxyExchange<T> {
 		return result.flatMap(response -> response.toEntity(ParameterizedTypeReference.forType(type)));
 	}
 
+	/**
+	 * 将请求头添加到给定的 HttpHeaders 对象中，排除已存在的请求头。
+	 * @param headers 要添加到的目标请求头对象
+	 * @param toAdd 要添加的请求头
+	 */
 	private void addHeaders(HttpHeaders headers, HttpHeaders toAdd) {
 		Set<String> filteredKeys = filterHeaderKeys(toAdd);
 		filteredKeys.stream().filter(key -> !headers.containsKey(key))
 				.forEach(header -> headers.addAll(header, toAdd.get(header)));
 	}
 
+	/**
+	 * 过滤请求头，移除敏感请求头。
+	 * @param headers 要过滤的请求头
+	 * @return 过滤后的请求头名称集合
+	 */
 	private Set<String> filterHeaderKeys(HttpHeaders headers) {
 		final Set<String> sensitiveHeaders = this.sensitive != null ? this.sensitive : DEFAULT_SENSITIVE;
 		return headers.keySet().stream().filter(header -> !sensitiveHeaders.contains(header.toLowerCase()))
 				.collect(Collectors.toSet());
 	}
 
+	/**
+	 * 将代理请求头添加到构建器中。
+	 * @param builder 请求体构建器
+	 * @return 添加了请求头的构建器
+	 */
 	private BodyBuilder headers(BodyBuilder builder) {
 		proxy();
 		for (String name : filterHeaderKeys(headers)) {
@@ -391,14 +516,21 @@ public class ProxyExchange<T> {
 		return builder;
 	}
 
+	/**
+	 * 添加代理相关的请求头信息，包括 Forwarded 和 X-Forwarded 头。
+	 */
 	private void proxy() {
 		URI uri = exchange.getRequest().getURI();
 		appendForwarded(uri);
 		appendXForwarded(uri);
 	}
 
+	/**
+	 * 追加 X-Forwarded 请求头（遗留格式）。
+	 * @param uri 请求 URI
+	 */
 	private void appendXForwarded(URI uri) {
-		// Append the legacy headers if they were already added upstream
+		// 如果上游已经添加了这些头，则追加而不是覆盖
 		String host = headers.getFirst("x-forwarded-host");
 		if (host == null) {
 			return;
@@ -413,6 +545,10 @@ public class ProxyExchange<T> {
 		headers.set("x-forwarded-proto", proto);
 	}
 
+	/**
+	 * 追加 Forwarded 请求头（标准格式）。
+	 * @param uri 请求 URI
+	 */
 	private void appendForwarded(URI uri) {
 		String forwarded = headers.getFirst("forwarded");
 		if (forwarded != null) {
@@ -425,6 +561,12 @@ public class ProxyExchange<T> {
 		headers.set("forwarded", forwarded);
 	}
 
+	/**
+	 * 构建 Forwarded 请求头的值。
+	 * @param uri 请求 URI
+	 * @param hostHeader 主机请求头的值
+	 * @return Forwarded 请求头的字符串
+	 */
 	private String forwarded(URI uri, String hostHeader) {
 		if (!StringUtils.isEmpty(hostHeader)) {
 			return "host=" + hostHeader;
@@ -435,21 +577,25 @@ public class ProxyExchange<T> {
 		return String.format("host=%s;proto=%s", uri.getHost(), uri.getScheme());
 	}
 
+	/**
+	 * 获取请求体。如果已经设置了请求体则直接返回，
+	 * 否则尝试从请求体绑定上下文中获取。
+	 * @return 请求体发布者
+	 */
 	private Publisher<?> body() {
 		Publisher<?> body = this.body;
 		if (body != null) {
 			return body;
 		}
 		body = getRequestBody();
-		hasBody = true; // even if it's null
+		hasBody = true; // 即使为 null 也标记为有请求体
 		return body;
 	}
 
 	/**
-	 * Search for the request body if it was already deserialized using
-	 * <code>@RequestBody</code>. If it is not found then deserialize it in the same way
-	 * that it would have been for a <code>@RequestBody</code>.
-	 * @return the request body
+	 * 搜索是否已经使用 <code>@RequestBody</code> 反序列化的请求体。
+	 * 如果未找到，则以与 <code>@RequestBody</code> 相同的方式进行反序列化。
+	 * @return 请求体对象
 	 */
 	private Mono<Object> getRequestBody() {
 		for (String key : bindingContext.getModel().asMap().keySet()) {
@@ -461,16 +607,31 @@ public class ProxyExchange<T> {
 		return null;
 	}
 
+	/**
+	 * 内部类，用于获取请求体。
+	 */
 	protected static class BodyGrabber {
 
+		/**
+		 * 获取请求体发布者。
+		 * @param body 请求体发布者
+		 * @return 请求体发布者
+		 */
 		public Publisher<Object> body(@RequestBody Publisher<Object> body) {
 			return body;
 		}
 
 	}
 
+	/**
+	 * 内部类，用于发送请求体。
+	 */
 	protected static class BodySender {
 
+		/**
+		 * 发送请求体（占位方法）。
+		 * @return null 占位符
+		 */
 		@ResponseBody
 		public Publisher<Object> body() {
 			return null;
