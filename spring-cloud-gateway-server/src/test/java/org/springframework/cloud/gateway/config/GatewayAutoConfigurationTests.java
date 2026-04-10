@@ -16,29 +16,10 @@
 
 package org.springframework.cloud.gateway.config;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
-
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.junit.Test;
-import reactor.netty.http.HttpProtocol;
-import reactor.netty.http.client.HttpClient;
-import reactor.netty.http.client.HttpClientConfig;
-import reactor.netty.http.client.WebsocketClientSpec;
-import reactor.netty.http.server.WebsocketServerSpec;
-import reactor.netty.resources.ConnectionProvider;
-import reactor.netty.tcp.SslProvider;
-import reactor.netty.transport.ProxyProvider;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
@@ -71,16 +52,45 @@ import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClient
 import org.springframework.web.filter.reactive.HiddenHttpMethodFilter;
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient;
 import org.springframework.web.reactive.socket.server.upgrade.ReactorNettyRequestUpgradeStrategy;
+import reactor.netty.http.HttpProtocol;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.http.client.HttpClientConfig;
+import reactor.netty.http.client.WebsocketClientSpec;
+import reactor.netty.http.server.WebsocketServerSpec;
+import reactor.netty.resources.ConnectionProvider;
+import reactor.netty.tcp.SslProvider;
+import reactor.netty.transport.ProxyProvider;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * GatewayAutoConfigurationTests - Gateway自动配置测试类
- *
- * 本测试类验证GatewayAutoConfiguration的各类配置功能，包括： - Netty HTTP客户端的默认配置和自定义配置 -
- * SSL/TLS配置（包括不安全信任管理器的设置） - Actuator端点的详细/传统模式切换 - OAuth2 Token Relay功能的Bean创建 -
- * gRPC过滤器的HTTP/2启用/禁用配置 - WebSocket协议支持配置 - 转发请求头过滤器的配置
+ * <p>
+ * 本测试类验证GatewayAutoConfiguration的各类配置功能，包括：
+ * <p>
+ * - Netty HTTP客户端的默认配置和自定义配置
+ * <p>
+ * - SSL/TLS配置（包括不安全信任管理器的设置）
+ * <p>
+ * - Actuator端点的详细/传统模式切换
+ * <p>
+ * - OAuth2 Token Relay功能的Bean创建
+ * <p>
+ * - gRPC过滤器的HTTP/2启用/禁用配置
+ * <p>
+ * - WebSocket协议支持配置
+ * <p>
+ * - 转发请求头过滤器的配置
  *
  * @author test
  */
@@ -88,7 +98,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * noHiddenHttpMethodFilter - 测试HiddenHttpMethodFilter被禁用
-	 *
+	 * <p>
 	 * 验证GatewayAutoConfiguration正确禁用了HiddenHttpMethodFilter
 	 * 该过滤器在Gateway中不需要，因为它使用自定义的路由机制
 	 */
@@ -104,7 +114,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * nettyHttpClientDefaults - 测试Netty HTTP客户端的默认配置
-	 *
+	 * <p>
 	 * 验证Gateway使用默认配置创建Netty HttpClient： - 存在HttpClient Bean -
 	 * 连接池为弹性池（maxConnections=Integer.MAX_VALUE） - 未配置代理 - 未配置SSL - 未启用gzip压缩 - 未配置日志处理器 -
 	 * 未设置连接超时
@@ -135,7 +145,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * nettyHttpClientConfigured - 测试Netty HTTP客户端的自定义配置
-	 *
+	 * <p>
 	 * 验证Gateway能够正确应用各种自定义配置： - SSL配置：使用不安全的信任管理器 - 连接超时：10毫秒 - 响应超时：10秒 - 连接池驱逐间隔：10秒 -
 	 * 连接池类型：固定 - 连接池指标：启用 - 压缩：启用 - 调试模式（wiretap）：启用 - 最大初始行长度：Integer.MAX_VALUE -
 	 * 代理主机：myhost - WebSocket最大帧负载：1024字节
@@ -200,8 +210,9 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * nettyHttpClientNoSslConfigurerIsBackwardsCompatible - 测试SSL配置器的向后兼容性
-	 * @deprecated 测试旧版本不带SslConfigurer的HttpClientFactory的兼容性
 	 *
+	 * @deprecated 测试旧版本不带SslConfigurer的HttpClientFactory的兼容性
+	 * <p>
 	 * 验证不使用自定义SslConfigurer时，SSL配置仍然能够正确工作 确认以下方法被调用： - configureSsl -
 	 * configureSslContext - getTrustedX509CertificatesForTrustManager -
 	 * getKeyManagerFactory - setTrustManager(TrustManagerFactory)
@@ -230,7 +241,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * verboseActuatorEnabledByDefault - 测试详细Actuator端点默认启用
-	 *
+	 * <p>
 	 * 验证默认情况下GatewayControllerEndpoint（详细模式）被注册
 	 * 而GatewayLegacyControllerEndpoint（传统模式）不会被注册
 	 */
@@ -245,7 +256,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * verboseActuatorDisabled - 测试详细Actuator端点被禁用
-	 *
+	 * <p>
 	 * 验证当配置spring.cloud.gateway.actuator.verbose.enabled=false时
 	 * GatewayLegacyControllerEndpoint（传统模式）会被注册
 	 */
@@ -259,7 +270,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * tokenRelayBeansAreCreated - 测试OAuth2 Token Relay相关Bean的创建
-	 *
+	 * <p>
 	 * 验证当配置OAuth2客户端后，TokenRelayGatewayFilterFactory和
 	 * ReactiveOAuth2AuthorizedClientManager Bean能够正确创建 这些Bean用于在代理请求时传递OAuth2令牌
 	 */
@@ -285,7 +296,7 @@ public class GatewayAutoConfigurationTests {
 	/**
 	 * gatewayReactiveOAuth2AuthorizedClientManagerBacksOffForCustomBean -
 	 * 测试自定义OAuth2客户端管理器的优先级
-	 *
+	 * <p>
 	 * 验证当用户自定义了ReactiveOAuth2AuthorizedClientManager Bean时 Gateway不会覆盖用户的配置
 	 */
 	@Test
@@ -309,7 +320,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * noTokenRelayFilter - 测试Token Relay过滤器禁用时的错误处理
-	 *
+	 * <p>
 	 * 验证当spring.cloud.gateway.filter.token-relay.enabled=false但路由使用了tokenRelay过滤器时
 	 * 会抛出IllegalStateException异常，提示未找到TokenRelayGatewayFilterFactory Bean
 	 */
@@ -334,9 +345,9 @@ public class GatewayAutoConfigurationTests {
 	/**
 	 * reactorNettyRequestUpgradeStrategyWebSocketSpecBuilderIsUniquePerRequest -
 	 * 测试WebSocket服务端点配置的独立性
-	 *
+	 * <p>
 	 * Issue: gh-2159
-	 *
+	 * <p>
 	 * 验证ReactorNettyRequestUpgradeStrategy为每个请求创建独立的WebsocketServerSpec 确保不同请求可以使用不同的协议配置
 	 */
 	@Test // gh-2159
@@ -358,9 +369,9 @@ public class GatewayAutoConfigurationTests {
 	/**
 	 * webSocketClientSpecBuilderIsUniquePerReactorNettyWebSocketClient -
 	 * 测试WebSocket客户端配置的独立性
-	 *
+	 * <p>
 	 * Issue: gh-2215
-	 *
+	 * <p>
 	 * 验证ReactorNettyWebSocketClient为每个请求创建独立的WebsocketClientSpec 确保协议配置不会在请求之间缓存
 	 */
 	@Test // gh-2215
@@ -382,7 +393,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * gRPCFiltersConfiguredWhenHTTP2Enabled - 测试HTTP/2启用时gRPC过滤器配置
-	 *
+	 * <p>
 	 * 验证当server.http2.enabled=true时： - GRPCRequestHeadersFilter被注册 -
 	 * GRPCResponseHeadersFilter被注册 - HttpClient支持HTTP/1.1和HTTP/2协议
 	 */
@@ -402,7 +413,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * gRPCFiltersNotConfiguredWhenHTTP2Disabled - 测试HTTP/2禁用时gRPC过滤器不配置
-	 *
+	 * <p>
 	 * 验证当server.http2.enabled=false时： - GRPCRequestHeadersFilter不会被注册 -
 	 * GRPCResponseHeadersFilter不会被注册
 	 */
@@ -472,7 +483,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * ServerPropertiesConfig - 服务器配置类
-	 *
+	 * <p>
 	 * 在GatewayAutoConfiguration之前加载，提供自定义的HttpClientFactory和SslConfigurer
 	 */
 	@Configuration
@@ -482,30 +493,32 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * customHttpClientFactory - 自定义HttpClient工厂
-		 * @param properties HTTP客户端属性配置
+		 *
+		 * @param properties       HTTP客户端属性配置
 		 * @param serverProperties 服务器属性配置
-		 * @param customizers HttpClient自定义器列表
-		 * @param sslConfigurer SSL配置器
+		 * @param customizers      HttpClient自定义器列表
+		 * @param sslConfigurer    SSL配置器
 		 * @return CustomHttpClientFactory实例
 		 */
 		@Bean
 		@Primary
 		CustomHttpClientFactory customHttpClientFactory(HttpClientProperties properties,
-				ServerProperties serverProperties, List<HttpClientCustomizer> customizers,
-				HttpClientSslConfigurer sslConfigurer) {
+		                                                ServerProperties serverProperties, List<HttpClientCustomizer> customizers,
+		                                                HttpClientSslConfigurer sslConfigurer) {
 			return new CustomHttpClientFactory(properties, serverProperties, sslConfigurer, customizers);
 		}
 
 		/**
 		 * customSslContextFactory - 自定义SSL上下文工厂
-		 * @param serverProperties 服务器属性配置
+		 *
+		 * @param serverProperties     服务器属性配置
 		 * @param httpClientProperties HTTP客户端属性配置
 		 * @return CustomSslConfigurer实例
 		 */
 		@Bean
 		@Primary
 		CustomSslConfigurer customSslContextFactory(ServerProperties serverProperties,
-				HttpClientProperties httpClientProperties) {
+		                                            HttpClientProperties httpClientProperties) {
 			return new CustomSslConfigurer(httpClientProperties.getSsl(), serverProperties);
 		}
 
@@ -524,15 +537,16 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * noSslConfigurerHttpClientFactory - 旧版HttpClient工厂
-		 * @param properties HTTP客户端属性配置
+		 *
+		 * @param properties       HTTP客户端属性配置
 		 * @param serverProperties 服务器属性配置
-		 * @param customizers HttpClient自定义器列表
+		 * @param customizers      HttpClient自定义器列表
 		 * @return NoSslConfigurerHttpClientFactory实例
 		 */
 		@Bean
 		@Primary
 		NoSslConfigurerHttpClientFactory noSslConfigurerHttpClientFactory(HttpClientProperties properties,
-				ServerProperties serverProperties, List<HttpClientCustomizer> customizers) {
+		                                                                  ServerProperties serverProperties, List<HttpClientCustomizer> customizers) {
 			return new NoSslConfigurerHttpClientFactory(properties, serverProperties, customizers);
 		}
 
@@ -540,37 +554,45 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * CustomHttpClientFactory - 自定义HttpClient工厂
-	 *
+	 * <p>
 	 * 扩展HttpClientFactory，用于测试目的，能够追踪连接池、代理和SSL配置状态
 	 */
 	protected static class CustomHttpClientFactory extends HttpClientFactory {
 
-		/** 连接提供器 - 用于追踪连接池配置 */
+		/**
+		 * 连接提供器 - 用于追踪连接池配置
+		 */
 		private ConnectionProvider connectionProvider;
 
-		/** 代理提供器构建器 - 用于追踪代理配置 */
+		/**
+		 * 代理提供器构建器 - 用于追踪代理配置
+		 */
 		private ProxyProvider.Builder proxyProvider;
 
-		/** 自定义SSL配置器引用 */
+		/**
+		 * 自定义SSL配置器引用
+		 */
 		private CustomSslConfigurer customSslContextFactory;
 
 		/**
 		 * 构造函数
-		 * @param properties HTTP客户端属性配置
+		 *
+		 * @param properties       HTTP客户端属性配置
 		 * @param serverProperties 服务器属性配置
-		 * @param sslConfigurer SSL配置器
-		 * @param customizers HttpClient自定义器列表
+		 * @param sslConfigurer    SSL配置器
+		 * @param customizers      HttpClient自定义器列表
 		 */
 		public CustomHttpClientFactory(HttpClientProperties properties, ServerProperties serverProperties,
-				HttpClientSslConfigurer sslConfigurer, List<HttpClientCustomizer> customizers) {
+		                               HttpClientSslConfigurer sslConfigurer, List<HttpClientCustomizer> customizers) {
 			super(properties, serverProperties, sslConfigurer, customizers);
 			this.customSslContextFactory = (CustomSslConfigurer) sslConfigurer;
 		}
 
 		/**
 		 * buildConnectionProvider - 构建连接提供器
-		 *
+		 * <p>
 		 * 重写以追踪连接池配置状态
+		 *
 		 * @param properties HTTP客户端属性配置
 		 * @return ConnectionProvider实例
 		 */
@@ -582,21 +604,23 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * configureProxyProvider - 配置代理提供器
-		 *
+		 * <p>
 		 * 重写以追踪代理配置状态
-		 * @param proxy 代理配置
+		 *
+		 * @param proxy     代理配置
 		 * @param proxySpec 代理提供器类型规格
 		 * @return ProxyProvider.Builder
 		 */
 		@Override
 		protected ProxyProvider.Builder configureProxyProvider(HttpClientProperties.Proxy proxy,
-				ProxyProvider.TypeSpec proxySpec) {
+		                                                       ProxyProvider.TypeSpec proxySpec) {
 			proxyProvider = super.configureProxyProvider(proxy, proxySpec);
 			return proxyProvider;
 		}
 
 		/**
 		 * isSslConfigured - 检查SSL是否已配置
+		 *
 		 * @return true如果SSL已配置
 		 */
 		public boolean isSslConfigured() {
@@ -605,6 +629,7 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * isInsecureTrustManagerSet - 检查是否设置了不安全的信任管理器
+		 *
 		 * @return true如果使用了InsecureTrustManagerFactory
 		 */
 		public boolean isInsecureTrustManagerSet() {
@@ -613,20 +638,25 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * CustomSslConfigurer - 自定义SSL配置器
-		 *
+		 * <p>
 		 * 扩展HttpClientSslConfigurer，用于追踪SSL配置状态
 		 */
 		protected static class CustomSslConfigurer extends HttpClientSslConfigurer {
 
-			/** 标记SSL是否已配置 */
+			/**
+			 * 标记SSL是否已配置
+			 */
 			boolean sslConfigured;
 
-			/** 标记是否使用了不安全的信任管理器 */
+			/**
+			 * 标记是否使用了不安全的信任管理器
+			 */
 			boolean insecureTrustManagerSet;
 
 			/**
 			 * 构造函数
-			 * @param sslProperties SSL属性配置
+			 *
+			 * @param sslProperties    SSL属性配置
 			 * @param serverProperties 服务器属性配置
 			 */
 			protected CustomSslConfigurer(HttpClientProperties.Ssl sslProperties, ServerProperties serverProperties) {
@@ -635,24 +665,26 @@ public class GatewayAutoConfigurationTests {
 
 			/**
 			 * configureSslContext - 配置SSL上下文
-			 *
+			 * <p>
 			 * 重写以追踪configureSslContext方法是否被调用
-			 * @param ssl SSL属性配置
+			 *
+			 * @param ssl            SSL属性配置
 			 * @param sslContextSpec SSL上下文规格
 			 */
 			@Override
 			protected void configureSslContext(HttpClientProperties.Ssl ssl,
-					SslProvider.SslContextSpec sslContextSpec) {
+			                                   SslProvider.SslContextSpec sslContextSpec) {
 				sslConfigured = true;
 				super.configureSslContext(getSslProperties(), sslContextSpec);
 			}
 
 			/**
 			 * setTrustManager - 设置信任管理器
-			 *
+			 * <p>
 			 * 重写以追踪是否使用了InsecureTrustManagerFactory
+			 *
 			 * @param sslContextBuilder SSL上下文构建器
-			 * @param factory 信任管理器工厂
+			 * @param factory           信任管理器工厂
 			 */
 			@Override
 			protected void setTrustManager(SslContextBuilder sslContextBuilder, TrustManagerFactory factory) {
@@ -668,41 +700,56 @@ public class GatewayAutoConfigurationTests {
 	 * NoSslConfigurerHttpClientFactory - 不使用SslConfigurer的旧版HttpClient工厂
 	 *
 	 * @deprecated 用于测试向后兼容性，不使用新引入的SslConfigurer机制
-	 *
+	 * <p>
 	 * 此类追踪SSL配置相关的所有方法调用，用于验证向后兼容性
 	 */
 	@Deprecated
 	protected static class NoSslConfigurerHttpClientFactory extends HttpClientFactory {
 
-		/** 标记configureSsl方法是否被调用 */
+		/**
+		 * 标记configureSsl方法是否被调用
+		 */
 		boolean configureSslCalled;
 
-		/** 标记configureSslContext方法是否被调用 */
+		/**
+		 * 标记configureSslContext方法是否被调用
+		 */
 		boolean configureSslContextCalled;
 
-		/** 标记getTrustedX509CertificatesForTrustManager方法是否被调用 */
+		/**
+		 * 标记getTrustedX509CertificatesForTrustManager方法是否被调用
+		 */
 		boolean getTrustedX509CertificatesForTrustManagerCalled;
 
-		/** 标记getKeyManagerFactory方法是否被调用 */
+		/**
+		 * 标记getKeyManagerFactory方法是否被调用
+		 */
 		boolean getKeyManagerFactoryCalled;
 
-		/** 标记createKeyStore方法是否被调用 */
+		/**
+		 * 标记createKeyStore方法是否被调用
+		 */
 		boolean createKeyStoreCalled;
 
-		/** 标记setTrustManager(X509Certificate...)方法是否被调用 */
+		/**
+		 * 标记setTrustManager(X509Certificate...)方法是否被调用
+		 */
 		boolean setTrustManagerCertCalled;
 
-		/** 标记setTrustManager(TrustManagerFactory)方法是否被调用 */
+		/**
+		 * 标记setTrustManager(TrustManagerFactory)方法是否被调用
+		 */
 		boolean setTrustManagerFactoryCalled;
 
 		/**
 		 * 构造函数
-		 * @param properties HTTP客户端属性配置
+		 *
+		 * @param properties       HTTP客户端属性配置
 		 * @param serverProperties 服务器属性配置
-		 * @param customizers HttpClient自定义器列表
+		 * @param customizers      HttpClient自定义器列表
 		 */
 		public NoSslConfigurerHttpClientFactory(HttpClientProperties properties, ServerProperties serverProperties,
-				List<HttpClientCustomizer> customizers) {
+		                                        List<HttpClientCustomizer> customizers) {
 			super(properties, serverProperties, customizers);
 		}
 
@@ -738,7 +785,7 @@ public class GatewayAutoConfigurationTests {
 
 		@Override
 		protected void setTrustManager(SslContextBuilder sslContextBuilder,
-				X509Certificate... trustedX509Certificates) {
+		                               X509Certificate... trustedX509Certificates) {
 			setTrustManagerCertCalled = true;
 			super.setTrustManager(sslContextBuilder, trustedX509Certificates);
 		}
@@ -753,7 +800,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * Config - 基础测试配置类
-	 *
+	 * <p>
 	 * 提供最小化的Spring Boot配置用于测试
 	 */
 	@EnableAutoConfiguration
@@ -764,7 +811,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * CustomHttpClientConfig - 自定义HttpClient配置类
-	 *
+	 * <p>
 	 * 提供自定义的HttpClient Bean用于测试Bean覆盖功能
 	 */
 	@EnableAutoConfiguration
@@ -775,6 +822,7 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * customHttpClient - 自定义HttpClient Bean
+		 *
 		 * @return CustomHttpClient实例
 		 */
 		@Bean
@@ -786,7 +834,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * CustomHttpClient - 自定义HttpClient实现
-	 *
+	 * <p>
 	 * 用于测试用户可以通过Bean定义覆盖默认的HttpClient
 	 */
 	protected static class CustomHttpClient extends HttpClient {
@@ -805,7 +853,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * RouteLocatorBuilderConfig - 路由定位器构建器配置类
-	 *
+	 * <p>
 	 * 提供测试用的路由定位器Bean，包含使用tokenRelay过滤器的路由
 	 */
 	@EnableAutoConfiguration
@@ -814,6 +862,7 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * myRouteLocator - 测试用路由定位器
+		 *
 		 * @param builder 路由定位器构建器
 		 * @return 包含测试路由的RouteLocator
 		 */
@@ -828,17 +877,20 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * HttpClientCustomizedConfig - HttpClient自定义器配置类
-	 *
+	 * <p>
 	 * 提供测试用的HttpClientCustomizer Bean
 	 */
 	@Configuration
 	protected static class HttpClientCustomizedConfig {
 
-		/** 标记自定义器是否被调用 */
+		/**
+		 * 标记自定义器是否被调用
+		 */
 		private final AtomicBoolean called = new AtomicBoolean();
 
 		/**
 		 * myCustomCustomizer - 自定义HttpClient自定义器
+		 *
 		 * @return HttpClientCustomizer实例
 		 */
 		@Bean
@@ -853,7 +905,7 @@ public class GatewayAutoConfigurationTests {
 
 	/**
 	 * TestReactiveOAuth2AuthorizedClientManagerConfig - 测试用OAuth2客户端管理器配置
-	 *
+	 * <p>
 	 * 提供自定义的ReactiveOAuth2AuthorizedClientManager Bean用于测试优先级
 	 */
 	@Configuration
@@ -861,6 +913,7 @@ public class GatewayAutoConfigurationTests {
 
 		/**
 		 * myReactiveOAuth2AuthorizedClientManager - 自定义OAuth2客户端管理器
+		 *
 		 * @return 自定义的ReactiveOAuth2AuthorizedClientManager实例
 		 */
 		@Bean
