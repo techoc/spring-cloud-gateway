@@ -43,13 +43,19 @@ import java.util.function.Function;
  */
 public class CompositeRouteDefinitionLocator implements RouteDefinitionLocator {
 
-	/** 日志记录器 */
+	/**
+	 * 日志记录器
+	 */
 	private static final Log log = LogFactory.getLog(CompositeRouteDefinitionLocator.class);
 
-	/** 被组合的多个路由定义定位器流 */
+	/**
+	 * 被组合的多个路由定义定位器流
+	 */
 	private final Flux<RouteDefinitionLocator> delegates;
 
-	/** ID 生成器，用于为未设置 ID 的路由定义生成唯一标识 */
+	/**
+	 * ID 生成器，用于为未设置 ID 的路由定义生成唯一标识
+	 */
 	private final IdGenerator idGenerator;
 
 	/**

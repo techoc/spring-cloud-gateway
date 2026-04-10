@@ -16,17 +16,6 @@
 
 package org.springframework.cloud.gateway.tests.grpc;
 
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.net.ssl.SSLContext;
-
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
@@ -39,7 +28,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
-
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -47,12 +35,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+import javax.net.ssl.SSLContext;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+
 /**
  * 通过 Spring Cloud Gateway Actuator 接口动态管理路由的工具类。
  * <p>
- * 在集成测试中，由于网关和后端服务端口是随机分配的，无法在配置文件中预先配置路由。
- * 本类通过调用 {@code /actuator/gateway/routes/{id}} 接口动态添加路由，
- * 并通过 {@code /actuator/gateway/refresh} 接口使新路由立即生效。
+ * 在集成测试中，由于网关和后端服务端口是随机分配的，无法在配置文件中预先配置路由。 本类通过调用 {@code /actuator/gateway/routes/{id}}
+ * 接口动态添加路由， 并通过 {@code /actuator/gateway/refresh} 接口使新路由立即生效。
  * </p>
  * <p>
  * 内部使用跳过 SSL 证书验证的 Apache HttpClient，以支持 HTTPS Actuator 端点访问。
@@ -72,7 +65,6 @@ public class RouteConfigurer {
 
 	/**
 	 * 构造函数，初始化 Actuator 端口并创建不校验证书的 RestTemplate。
-	 *
 	 * @param actuatorPort 运行网关的服务器端口
 	 */
 	RouteConfigurer(int actuatorPort) {
@@ -83,13 +75,12 @@ public class RouteConfigurer {
 	/**
 	 * 通过 Actuator 接口动态添加一条网关路由，并立即刷新使其生效。
 	 * <p>
-	 * 路由将所有匹配 {@code path} 的请求转发到 {@code https://localhost:<grpcServerPort>}。
-	 * 若 {@code filter} 不为空，则同时配置该路由过滤器。
+	 * 路由将所有匹配 {@code path} 的请求转发到 {@code https://localhost:<grpcServerPort>}。 若
+	 * {@code filter} 不为空，则同时配置该路由过滤器。
 	 * </p>
-	 *
 	 * @param grpcServerPort 后端 gRPC 服务器的端口号
-	 * @param path           路由匹配的请求路径（如 {@code /**} 或 {@code /json/hello}）
-	 * @param filter         路由过滤器配置字符串（如 {@code JsonToGrpc=...}），为 {@code null} 时不配置过滤器
+	 * @param path 路由匹配的请求路径（如 {@code /**} 或 {@code /json/hello}）
+	 * @param filter 路由过滤器配置字符串（如 {@code JsonToGrpc=...}），为 {@code null} 时不配置过滤器
 	 */
 	public void addRoute(int grpcServerPort, String path, String filter) {
 		// 使用 UUID 生成唯一的路由 ID，避免测试间路由冲突
@@ -134,7 +125,6 @@ public class RouteConfigurer {
 
 	/**
 	 * 拼接 Actuator 接口的完整 URL。
-	 *
 	 * @param context 接口路径（如 {@code /actuator/gateway/refresh}）
 	 * @return 完整的 HTTPS URL 字符串
 	 */
@@ -145,13 +135,11 @@ public class RouteConfigurer {
 	/**
 	 * 创建一个跳过 SSL 证书验证的 {@link RestTemplate}（测试环境专用）。
 	 * <p>
-	 * 使用 Apache HttpClient 构建底层连接，禁用证书链校验和主机名校验，
-	 * 以支持访问使用自签名证书的 HTTPS Actuator 端点。
+	 * 使用 Apache HttpClient 构建底层连接，禁用证书链校验和主机名校验， 以支持访问使用自签名证书的 HTTPS Actuator 端点。
 	 * </p>
 	 * <p>
 	 * <strong>警告：</strong>此方法仅适用于测试目的，严禁在生产环境使用。
 	 * </p>
-	 *
 	 * @return 配置了不安全 SSL 的 RestTemplate 实例
 	 */
 	private RestTemplate createUnsecureClient() {

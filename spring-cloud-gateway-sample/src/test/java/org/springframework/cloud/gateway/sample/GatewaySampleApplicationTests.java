@@ -53,17 +53,16 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
  * <p>
  * 本测试类对 Spring Cloud Gateway 示例应用进行端到端集成测试，验证以下功能：
  * <ul>
- *   <li>基本路由功能</li>
- *   <li>请求体读取断言</li>
- *   <li>请求体/响应体修改</li>
- *   <li>复杂断言组合</li>
- *   <li>Kotlin 路由支持</li>
- *   <li>Actuator 管理端点</li>
- *   <li>指标收集功能</li>
+ * <li>基本路由功能</li>
+ * <li>请求体读取断言</li>
+ * <li>请求体/响应体修改</li>
+ * <li>复杂断言组合</li>
+ * <li>Kotlin 路由支持</li>
+ * <li>Actuator 管理端点</li>
+ * <li>指标收集功能</li>
  * </ul>
  * <p>
- * 测试使用随机端口启动应用，并通过 WebTestClient 发送 HTTP 请求验证响应。
- * 同时启动独立的管理端口用于测试 Actuator 端点。
+ * 测试使用随机端口启动应用，并通过 WebTestClient 发送 HTTP 请求验证响应。 同时启动独立的管理端口用于测试 Actuator 端点。
  *
  * @author Spencer Gibb
  */
@@ -72,23 +71,26 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 public class GatewaySampleApplicationTests {
 
 	/**
-	 * 管理端点端口，用于测试 Actuator 功能。
-	 * 在 @BeforeAll 中动态分配可用端口。
+	 * 管理端点端口，用于测试 Actuator 功能。 在 @BeforeAll 中动态分配可用端口。
 	 */
 	protected static int managementPort;
+
 	/**
 	 * 应用服务器端口，由 Spring Boot 自动注入。
 	 */
 	@LocalServerPort
 	protected int port = 0;
+
 	/**
 	 * WebTestClient 实例，用于发送 HTTP 请求和验证响应。
 	 */
 	protected WebTestClient webClient;
+
 	/**
 	 * 基础 URI，格式为 http://localhost:{port}。
 	 */
 	protected String baseUri;
+
 	/**
 	 * 网关指标属性配置，用于获取指标名称前缀。
 	 */
@@ -145,7 +147,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 验证当请求体内容为 "hi" 时，路由匹配成功并返回预期的响应头。
 	 *
-	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的 "read_body_pred" 路由
+	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的
+	 * "read_body_pred" 路由
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
@@ -160,7 +163,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 验证请求体 "hello" 被转换为大写并重复两次（"HELLOHELLO"）。
 	 *
-	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的 "rewrite_request_upper" 路由
+	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的
+	 * "rewrite_request_upper" 路由
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
@@ -176,7 +180,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 验证请求体字符串被转换为 Hello 对象，并序列化为 JSON 格式。
 	 *
-	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的 "rewrite_request_obj" 路由
+	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的
+	 * "rewrite_request_obj" 路由
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
@@ -192,7 +197,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 验证响应体被转换为大写形式。
 	 *
-	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的 "rewrite_response_upper" 路由
+	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的
+	 * "rewrite_response_upper" 路由
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
@@ -208,7 +214,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 验证当响应体为空时，返回默认字符串 "emptybody"。
 	 *
-	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的 "rewrite_empty_response" 路由
+	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的
+	 * "rewrite_empty_response" 路由
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
@@ -223,7 +230,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 验证当响应体存在时，不会触发错误供应商（fail supplier）。
 	 *
-	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的 "rewrite_response_fail_supplier" 路由
+	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的
+	 * "rewrite_response_fail_supplier" 路由
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
@@ -239,7 +247,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 验证 Map 类型的响应体被转换为纯文本字符串。
 	 *
-	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的 "rewrite_response_obj" 路由
+	 * @see GatewaySampleApplication#customRouteLocator(RouteLocatorBuilder) 中的
+	 * "rewrite_response_obj" 路由
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
@@ -294,8 +303,7 @@ public class GatewaySampleApplicationTests {
 	/**
 	 * 测试 Actuator 指标端点。
 	 * <p>
-	 * 验证网关请求指标被正确收集，可以通过 Actuator 端点访问。
-	 * 首先调用 contextLoads() 产生一些请求，然后查询指标端点验证指标存在。
+	 * 验证网关请求指标被正确收集，可以通过 Actuator 端点访问。 首先调用 contextLoads() 产生一些请求，然后查询指标端点验证指标存在。
 	 *
 	 * @see GatewayMetricsProperties
 	 */
@@ -324,8 +332,8 @@ public class GatewaySampleApplicationTests {
 	 * <p>
 	 * 提供测试所需的 Bean 配置，包括：
 	 * <ul>
-	 *   <li>HttpBinCompatibleController - 模拟 httpbin 服务的控制器</li>
-	 *   <li>LoadBalancerClient 配置 - 用于负载均衡测试</li>
+	 * <li>HttpBinCompatibleController - 模拟 httpbin 服务的控制器</li>
+	 * <li>LoadBalancerClient 配置 - 用于负载均衡测试</li>
 	 * </ul>
 	 */
 	@Configuration(proxyBeanMethods = false)
@@ -336,7 +344,6 @@ public class GatewaySampleApplicationTests {
 
 		/**
 		 * 创建 HttpBin 兼容控制器 Bean。
-		 *
 		 * @return HttpBinCompatibleController 实例
 		 */
 		@Bean
@@ -349,8 +356,7 @@ public class GatewaySampleApplicationTests {
 	/**
 	 * 负载均衡配置类。
 	 * <p>
-	 * 配置固定服务实例列表供应商，用于测试负载均衡功能。
-	 * 将 "httpbin" 服务映射到本地测试服务器端口。
+	 * 配置固定服务实例列表供应商，用于测试负载均衡功能。 将 "httpbin" 服务映射到本地测试服务器端口。
 	 */
 	protected static class LoadBalancerConfig {
 
@@ -364,7 +370,6 @@ public class GatewaySampleApplicationTests {
 		 * 创建固定服务实例列表供应商。
 		 * <p>
 		 * 返回一个包含单个服务实例的供应商，该实例指向本地测试服务器。
-		 *
 		 * @param env Spring 环境对象
 		 * @return ServiceInstanceListSupplier 实例
 		 */

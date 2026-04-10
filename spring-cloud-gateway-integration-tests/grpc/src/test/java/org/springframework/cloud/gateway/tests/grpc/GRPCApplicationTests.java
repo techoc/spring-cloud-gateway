@@ -16,12 +16,6 @@
 
 package org.springframework.cloud.gateway.tests.grpc;
 
-import java.security.cert.X509Certificate;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
@@ -29,10 +23,14 @@ import io.grpc.netty.NettyChannelBuilder;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
+
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.X509Certificate;
 
 import static io.grpc.Status.FAILED_PRECONDITION;
 import static io.grpc.netty.NegotiationType.TLS;
@@ -43,8 +41,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
  * <p>
  * 验证 Spring Cloud Gateway 能够正确代理 gRPC 一元调用（Unary Call）：
  * <ul>
- *   <li>正常请求：通过网关转发并正确返回问候响应</li>
- *   <li>异常请求：通过网关转发并正确传递服务端抛出的 {@link StatusRuntimeException}</li>
+ * <li>正常请求：通过网关转发并正确返回问候响应</li>
+ * <li>异常请求：通过网关转发并正确传递服务端抛出的 {@link StatusRuntimeException}</li>
  * </ul>
  * 测试使用 TLS 加密通道，客户端配置为信任所有证书（测试环境专用）。
  * </p>
@@ -64,8 +62,7 @@ public class GRPCApplicationTests {
 	/**
 	 * 每个测试方法执行前的初始化操作。
 	 * <p>
-	 * 计算 gRPC 服务器端口（网关端口 + 1），并通过 Actuator 动态注册路由，
-	 * 将 {@code /**} 的请求转发到 gRPC 服务器。
+	 * 计算 gRPC 服务器端口（网关端口 + 1），并通过 Actuator 动态注册路由， 将 {@code /**} 的请求转发到 gRPC 服务器。
 	 * </p>
 	 */
 	@BeforeEach
@@ -80,10 +77,9 @@ public class GRPCApplicationTests {
 	/**
 	 * 测试：通过网关发送正常 gRPC 一元调用，应成功收到问候响应。
 	 * <p>
-	 * 客户端发送包含 firstName="Sir"、lastName="FromClient" 的请求，
-	 * 期望响应的 greeting 字段为 "Hello, Sir FromClient"。
+	 * 客户端发送包含 firstName="Sir"、lastName="FromClient" 的请求， 期望响应的 greeting 字段为 "Hello, Sir
+	 * FromClient"。
 	 * </p>
-	 *
 	 * @throws SSLException 创建 SSL 通道失败时抛出
 	 */
 	@Test
@@ -102,10 +98,8 @@ public class GRPCApplicationTests {
 	/**
 	 * 创建经由指定端口的 TLS gRPC 通道。
 	 * <p>
-	 * 使用"信任所有证书"的 {@link TrustManager} 绕过证书校验，
-	 * 仅适用于测试场景，生产环境请勿使用此方式。
+	 * 使用"信任所有证书"的 {@link TrustManager} 绕过证书校验， 仅适用于测试场景，生产环境请勿使用此方式。
 	 * </p>
-	 *
 	 * @param port 连接的目标端口
 	 * @return 配置好 TLS 的 gRPC 托管通道
 	 * @throws SSLException SSL 上下文构建失败时抛出
@@ -116,19 +110,16 @@ public class GRPCApplicationTests {
 
 		return NettyChannelBuilder.forAddress("localhost", port).useTransportSecurity()
 				// 配置 SSL 上下文：使用自定义 TrustManager 跳过证书验证
-				.sslContext(GrpcSslContexts.forClient().trustManager(trustAllCerts[0]).build())
-				.negotiationType(TLS)
+				.sslContext(GrpcSslContexts.forClient().trustManager(trustAllCerts[0]).build()).negotiationType(TLS)
 				.build();
 	}
 
 	/**
 	 * 测试：通过网关发送会触发服务端抛异常的 gRPC 一元调用，应正确接收到错误状态。
 	 * <p>
-	 * 当 firstName 为 "failWithRuntimeException!" 时，服务端会抛出
-	 * {@code FAILED_PRECONDITION} 状态的 {@link StatusRuntimeException}，
-	 * 网关应将该错误原样传递给客户端。
+	 * 当 firstName 为 "failWithRuntimeException!" 时，服务端会抛出 {@code FAILED_PRECONDITION} 状态的
+	 * {@link StatusRuntimeException}， 网关应将该错误原样传递给客户端。
 	 * </p>
-	 *
 	 * @throws SSLException 创建 SSL 通道失败时抛出
 	 */
 	@Test
@@ -152,15 +143,15 @@ public class GRPCApplicationTests {
 	/**
 	 * 创建一个信任所有 X.509 证书的 {@link TrustManager} 数组。
 	 * <p>
-	 * <strong>警告：</strong>此方法仅用于测试目的，会完全跳过 SSL 证书验证，
-	 * 存在中间人攻击风险，严禁在生产环境使用。
+	 * <strong>警告：</strong>此方法仅用于测试目的，会完全跳过 SSL 证书验证， 存在中间人攻击风险，严禁在生产环境使用。
 	 * </p>
-	 *
 	 * @return 包含一个"信任所有"TrustManager 的数组
 	 */
 	private TrustManager[] createTrustAllTrustManager() {
 		return new TrustManager[] { new X509TrustManager() {
-			/** 返回空数组，表示不设置受信任的 CA 列表（信任所有颁发者）*/
+			/**
+			 * 返回空数组，表示不设置受信任的 CA 列表（信任所有颁发者）
+			 */
 			public X509Certificate[] getAcceptedIssuers() {
 				return new X509Certificate[0];
 			}

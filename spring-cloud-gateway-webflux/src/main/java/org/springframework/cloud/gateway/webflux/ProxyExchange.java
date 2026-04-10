@@ -16,19 +16,7 @@
 
 package org.springframework.cloud.gateway.webflux;
 
-import java.lang.reflect.Type;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Mono;
-
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
@@ -47,36 +35,44 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClient.RequestBodySpec;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * 一个可以在 <code>@RequestMapping</code> 方法中作为参数使用的代理交换类，能够将请求转发到后端服务。 Spring 会自动将该类的实例注入到你的
- * MVC 处理器方法中，你可以通过调用 {@link #get()}、
+ * 代理交换类，用于在 Spring WebFlux 控制器方法中实现请求代理转发功能。
+ * <p>
+ * 该类可以在 <code>@RequestMapping</code> 方法中作为参数使用，能够将请求转发到后端服务。 Spring
+ * 会自动将该类的实例注入到控制器方法中，开发者可以通过调用 {@link #get()}、
  * {@link #post()}、{@link #put()}、{@link #patch()}、{@link #delete()} 等 HTTP 方法 来返回一个
- * <code>ResponseEntity</code>。示例：
- *
- * <pre>
+ * <code>ResponseEntity</code>。
+ * <p>
+ * 使用示例： <pre>
  * &#64;GetMapping("/proxy/{id}")
  * public Mono&lt;ResponseEntity&lt;?&gt;&gt; proxy(@PathVariable Integer id, ProxyExchange&lt;?&gt; proxy)
  * 		throws Exception {
  * 	return proxy.uri("http://localhost:9000/foos/" + id).get();
  * }
  * </pre>
- *
  * <p>
  * 默认情况下，传入的请求体和请求头会原封不动地发送到下游服务（"敏感"请求头除外）。 要操作下游请求，可以使用 {@link ProxyExchange}
- * 中的"构建器"风格方法， 但只有 {@link #uri(String)} 是必需的。你可以通过调用 {@link #sensitive(String...)} 方法
+ * 中的"构建器"风格方法， 但只有 {@link #uri(String)} 是必需的。可以通过调用 {@link #sensitive(String...)} 方法
  * 来修改敏感请求头（Authorization 和 Cookie 默认就是敏感的）。
- * </p>
  * <p>
- * <code>ProxyExchange&lt;T&gt;</code> 中的类型参数 <code>T</code> 是响应体的类型， 因此它会出现在你从
+ * <code>ProxyExchange&lt;T&gt;</code> 中的类型参数 <code>T</code> 是响应体的类型， 因此它会出现在从
  * <code>@RequestMapping</code> 返回的 <code>ResponseEntity</code> 中。
- * 如果你不关心请求和响应体的类型（例如只是简单透传），那么可以使用通配符或 <code>byte[]</code> （除非你提供转换器，否则
- * <code>Object</code> 可能无法工作）。 如果你想要转换或操作响应，或者想要断言它可以转换为你声明的类型，请使用具体类型。
- * </p>
+ * 如果不关心请求和响应体的类型（例如只是简单透传），可以使用通配符或 <code>byte[]</code> （除非提供转换器，否则 <code>Object</code>
+ * 可能无法工作）。 如果想要转换或操作响应，或者想要断言它可以转换为声明的类型，请使用具体类型。
  * <p>
- * 要操作响应，可以使用带有 <code>Function</code> 参数的重载 HTTP 方法， 并传入代码来转换响应。例如：
- *
- * <pre>
+ * 要操作响应，可以使用带有 <code>Function</code> 参数的重载 HTTP 方法， 并传入代码来转换响应。例如： <pre>
  * &#64;PostMapping("/proxy")
  * public Mono&lt;ResponseEntity&lt;Foo&gt;&gt; proxy(ProxyExchange&lt;Foo&gt; proxy) throws Exception {
  * 	return proxy.uri("http://localhost:9000/foos/") //
@@ -86,56 +82,74 @@ import org.springframework.web.server.ServerWebExchange;
  * 					.body(response.getBody()) //
  * 			);
  * }
- *
  * </pre>
- *
- * </p>
  * <p>
- * Spring 的 {@link HttpMessageConverter 消息转换器}的完整机制会应用于 传入的请求和响应以及后端请求。如果你需要额外的转换器，
- * 那么它们需要在 MVC 配置的上游添加，同时也需要添加到用于后端调用的 {@link WebClient} 中 （详见
+ * Spring 的 {@link HttpMessageConverter 消息转换器}的完整机制会应用于 传入的请求和响应以及后端请求。如果需要额外的转换器， 需要在 MVC
+ * 配置的上游添加，同时也需要添加到用于后端调用的 {@link WebClient} 中 （详见
  * {@link ProxyExchange#ProxyExchange(WebClient, ServerWebExchange, BindingContext, Type)
  * 构造函数}）。
- * </p>
  *
  * @author Dave Syer
- *
+ * @author Spencer Gibb
  */
 public class ProxyExchange<T> {
 
 	/**
-	 * 默认情况下被认为是敏感的请求头名称集合。 这些请求头（如 cookie、authorization）默认不会被转发到下游服务。
+	 * 默认敏感请求头集合。
+	 * <p>
+	 * 包含 "cookie" 和 "authorization" 请求头，这些请求头出于安全考虑 默认不会被转发到下游服务。
 	 */
 	public static Set<String> DEFAULT_SENSITIVE = Collections
 			.unmodifiableSet(new HashSet<>(Arrays.asList("cookie", "authorization")));
 
-	/** HTTP 请求方法，用于确定使用哪种 HTTP 操作。 */
+	/**
+	 * HTTP 请求方法，用于确定使用哪种 HTTP 操作。
+	 */
 	private HttpMethod httpMethod;
 
-	/** 后端服务的 URI 地址。 */
+	/**
+	 * 后端服务的 URI 地址。
+	 */
 	private URI uri;
 
-	/** WebClient 实例，用于执行 HTTP 请求。 */
+	/**
+	 * WebClient 实例，用于执行 HTTP 请求。
+	 */
 	private WebClient rest;
 
-	/** 请求体发布者，用于向下游服务发送请求数据。 */
+	/**
+	 * 请求体发布者，用于向下游服务发送请求数据。
+	 */
 	private Publisher<Object> body;
 
-	/** 标记请求是否包含请求体。 */
+	/**
+	 * 标记请求是否包含请求体。
+	 */
 	private boolean hasBody = false;
 
-	/** 服务器 Web 交换对象，包含当前请求和响应信息。 */
+	/**
+	 * 服务器 Web 交换对象，包含当前请求和响应信息。
+	 */
 	private ServerWebExchange exchange;
 
-	/** 数据绑定上下文，用于处理请求体绑定和验证。 */
+	/**
+	 * 数据绑定上下文，用于处理请求体绑定和验证。
+	 */
 	private BindingContext bindingContext;
 
-	/** 敏感请求头名称集合，这些请求头不会被转发到下游。 */
+	/**
+	 * 敏感请求头名称集合，这些请求头不会被转发到下游。
+	 */
 	private Set<String> sensitive;
 
-	/** 要发送到下游服务的 HTTP 请求头。 */
+	/**
+	 * 要发送到下游服务的 HTTP 请求头。
+	 */
 	private HttpHeaders headers = new HttpHeaders();
 
-	/** 响应体的类型信息。 */
+	/**
+	 * 响应体的类型信息。
+	 */
 	private Type responseType;
 
 	/**
@@ -154,13 +168,13 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * Sets the body for the downstream request (if using {@link #post()}, {@link #put()}
-	 * or {@link #patch()}). The body can be omitted if you just want to pass the incoming
-	 * request downstream without changing it. If you want to transform the incoming
-	 * request you can declare it as a <code>@RequestBody</code> in your
-	 * <code>@RequestMapping</code> in the usual Spring MVC way.
-	 * @param body the request body to send downstream
-	 * @return this for convenience
+	 * 设置下游请求的请求体。
+	 * <p>
+	 * 该方法用于 POST、PUT 或 PATCH 请求。如果只是想将传入请求原封不动地传递下去， 可以省略此方法。如果需要转换传入请求，可以在
+	 * <code>@RequestMapping</code> 中 使用 <code>@RequestBody</code> 声明请求体，以常规的 Spring MVC
+	 * 方式处理。
+	 * @param body 要发送到下游的请求体
+	 * @return 当前 ProxyExchange 实例，便于链式调用
 	 */
 	public ProxyExchange<T> body(Object body) {
 		this.body = Mono.just(body);
@@ -168,13 +182,11 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * Sets the body for the downstream request (if using {@link #post()}, {@link #put()}
-	 * or {@link #patch()}). The body can be omitted if you just want to pass the incoming
-	 * request downstream without changing it. If you want to transform the incoming
-	 * request you can declare it as a <code>@RequestBody</code> in your
-	 * <code>@RequestMapping</code> in the usual Spring MVC way.
-	 * @param body the request body to send downstream
-	 * @return this for convenience
+	 * 设置下游请求的请求体（Publisher 版本）。
+	 * <p>
+	 * 该方法用于 POST、PUT 或 PATCH 请求，支持响应式流。
+	 * @param body 要发送到下游的请求体发布者
+	 * @return 当前 ProxyExchange 实例，便于链式调用
 	 */
 	@SuppressWarnings("unchecked")
 	public ProxyExchange<T> body(Publisher<?> body) {
@@ -183,7 +195,9 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * 为下游调用设置请求头。 该方法允许自定义要转发到后端服务的 HTTP 请求头信息。
+	 * 为下游调用设置请求头。
+	 * <p>
+	 * 该方法允许自定义要转发到后端服务的 HTTP 请求头信息。
 	 * @param name 请求头名称
 	 * @param value 请求头值，支持多个值
 	 * @return 当前 ProxyExchange 实例，便于链式调用
@@ -194,10 +208,11 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * Additional headers, or overrides of the incoming ones, to be used in the downstream
-	 * call.
-	 * @param headers the http headers to use in the downstream call
-	 * @return this for convenience
+	 * 设置额外的请求头或覆盖传入的请求头。
+	 * <p>
+	 * 这些请求头将用于下游调用。
+	 * @param headers 要用于下游调用的 HTTP 请求头
+	 * @return 当前 ProxyExchange 实例，便于链式调用
 	 */
 	public ProxyExchange<T> headers(HttpHeaders headers) {
 		this.headers.putAll(headers);
@@ -205,10 +220,11 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * Sets the names of sensitive headers that are not passed downstream to the backend
-	 * service.
-	 * @param names the names of sensitive headers
-	 * @return this for convenience
+	 * 设置敏感请求头名称。
+	 * <p>
+	 * 被标记为敏感的请求头不会被转发到下游服务。 默认敏感请求头包括 "cookie" 和 "authorization"。
+	 * @param names 敏感请求头名称
+	 * @return 当前 ProxyExchange 实例，便于链式调用
 	 */
 	public ProxyExchange<T> sensitive(String... names) {
 		if (this.sensitive == null) {
@@ -223,9 +239,12 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * Sets the uri for the backend call when triggered by the HTTP methods.
-	 * @param uri the backend uri to send the request to
-	 * @return this for convenience
+	 * 设置后端调用的 URI。
+	 * <p>
+	 * 这是唯一必需的配置项，用于指定请求要转发到的后端服务地址。
+	 * @param uri 后端服务的 URI 地址
+	 * @return 当前 ProxyExchange 实例，便于链式调用
+	 * @throws IllegalStateException 如果 URI 语法无效
 	 */
 	public ProxyExchange<T> uri(String uri) {
 		try {
@@ -393,7 +412,9 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * 根据当前请求的 HTTP 方法自动转发请求。 该方法会根据原始的 HTTP 方法（GET、POST、PUT 等）自动选择对应的代理方法。
+	 * 根据当前请求的 HTTP 方法自动转发请求。
+	 * <p>
+	 * 该方法会根据原始的 HTTP 方法（GET、POST、PUT 等）自动选择对应的代理方法。
 	 * @return 包含响应数据的 Mono 对象
 	 */
 	public Mono<ResponseEntity<T>> forward() {
@@ -446,6 +467,8 @@ public class ProxyExchange<T> {
 
 	/**
 	 * 执行实际的 HTTP 交换请求。
+	 * <p>
+	 * 使用 WebClient 发送请求到下游服务，并将响应转换为指定类型。
 	 * @param requestEntity 要发送的请求实体
 	 * @return 包含响应数据的 Mono 对象
 	 */
@@ -511,6 +534,8 @@ public class ProxyExchange<T> {
 
 	/**
 	 * 添加代理相关的请求头信息，包括 Forwarded 和 X-Forwarded 头。
+	 * <p>
+	 * 这些请求头用于告知后端服务原始请求的信息，支持代理链追踪。
 	 */
 	private void proxy() {
 		URI uri = exchange.getRequest().getURI();
@@ -520,6 +545,8 @@ public class ProxyExchange<T> {
 
 	/**
 	 * 追加 X-Forwarded 请求头（遗留格式）。
+	 * <p>
+	 * 如果上游已经添加了这些头，则追加而不是覆盖。
 	 * @param uri 请求 URI
 	 */
 	private void appendXForwarded(URI uri) {
@@ -539,7 +566,9 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * 追加 Forwarded 请求头（标准格式）。
+	 * 追加 Forwarded 请求头（标准格式，RFC 7239）。
+	 * <p>
+	 * Forwarded 头是 X-Forwarded-* 系列头的标准化替代方案。
 	 * @param uri 请求 URI
 	 */
 	private void appendForwarded(URI uri) {
@@ -601,6 +630,8 @@ public class ProxyExchange<T> {
 
 	/**
 	 * 内部类，用于获取请求体。
+	 * <p>
+	 * 该类通过 <code>@RequestBody</code> 注解标记方法参数， 以便 Spring 自动绑定请求体。
 	 */
 	protected static class BodyGrabber {
 
@@ -617,6 +648,8 @@ public class ProxyExchange<T> {
 
 	/**
 	 * 内部类，用于发送请求体。
+	 * <p>
+	 * 该类通过 <code>@ResponseBody</code> 注解标记方法， 用于处理响应体的返回。
 	 */
 	protected static class BodySender {
 

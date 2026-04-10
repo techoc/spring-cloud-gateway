@@ -36,17 +36,16 @@ import java.time.Duration;
 /**
  * 无指标依赖的 GatewaySampleApplication 测试类。
  * <p>
- * 本测试类验证当 Micrometer 和 Spring Boot Actuator 依赖被排除时，
- * 网关应用仍然可以正常工作，并且模拟的 Actuator 端点可以正常返回。
+ * 本测试类验证当 Micrometer 和 Spring Boot Actuator 依赖被排除时， 网关应用仍然可以正常工作，并且模拟的 Actuator 端点可以正常返回。
  * <p>
- * 使用 {@link ModifiedClassPathRunner} 和 {@link ClassPathExclusions} 注解
- * 在测试运行时从类路径中排除指定的依赖 JAR 文件。
+ * 使用 {@link ModifiedClassPathRunner} 和 {@link ClassPathExclusions} 注解 在测试运行时从类路径中排除指定的依赖
+ * JAR 文件。
  * <p>
  * 主要测试场景：
  * <ul>
- *   <li>应用在无指标依赖时正常启动</li>
- *   <li>模拟的 Actuator 指标端点返回预期响应</li>
- *   <li>基本路由功能正常工作</li>
+ * <li>应用在无指标依赖时正常启动</li>
+ * <li>模拟的 Actuator 指标端点返回预期响应</li>
+ * <li>基本路由功能正常工作</li>
  * </ul>
  *
  * @see ModifiedClassPathRunner
@@ -110,9 +109,7 @@ public class GatewaySampleApplicationWithoutMetricsTests {
 	/**
 	 * 初始化 Spring 应用上下文。
 	 * <p>
-	 * 使用 SpringApplicationBuilder 创建响应式 Web 应用，
-	 * 加载 GatewaySampleApplication 和指定的配置类。
-	 *
+	 * 使用 SpringApplicationBuilder 创建响应式 Web 应用， 加载 GatewaySampleApplication 和指定的配置类。
 	 * @param config 配置类，用于加载额外的 Bean 定义
 	 * @return 可配置的应用上下文实例
 	 */
@@ -126,11 +123,12 @@ public class GatewaySampleApplicationWithoutMetricsTests {
 	 * <p>
 	 * 验证当 Micrometer 和 Actuator 依赖被排除时：
 	 * <ol>
-	 *   <li>应用可以正常启动并处理请求</li>
-	 *   <li>模拟的 Actuator 指标端点返回预定义的响应</li>
+	 * <li>应用可以正常启动并处理请求</li>
+	 * <li>模拟的 Actuator 指标端点返回预定义的响应</li>
 	 * </ol>
 	 * <p>
-	 * 预期响应为 {@link GatewaySampleApplication#HELLO_FROM_FAKE_ACTUATOR_METRICS_GATEWAY_REQUESTS}。
+	 * 预期响应为
+	 * {@link GatewaySampleApplication#HELLO_FROM_FAKE_ACTUATOR_METRICS_GATEWAY_REQUESTS}。
 	 *
 	 * @see GatewaySampleApplication#testWhenMetricPathIsNotMeet()
 	 */

@@ -21,8 +21,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import reactor.core.publisher.Hooks;
-
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -32,6 +30,7 @@ import org.springframework.cloud.gateway.tests.http2.Http2Application;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.util.SocketUtils;
+import reactor.core.publisher.Hooks;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import static org.springframework.cloud.gateway.tests.http2.Http2ApplicationTests.assertResponse;
@@ -41,20 +40,22 @@ import static org.springframework.cloud.gateway.tests.http2.Http2ApplicationTest
  * <p>
  * 验证 Spring Cloud Gateway 的 TLS 终止场景：
  * <ul>
- *   <li>客户端使用 HTTPS（HTTP/2 over TLS）连接到网关</li>
- *   <li>网关在接收到 HTTPS 请求后，以普通 HTTP（无 TLS）协议将请求转发到后端服务</li>
- *   <li>后端服务（{@link NosslConfiguration}）以独立进程在随机端口启动</li>
+ * <li>客户端使用 HTTPS（HTTP/2 over TLS）连接到网关</li>
+ * <li>网关在接收到 HTTPS 请求后，以普通 HTTP（无 TLS）协议将请求转发到后端服务</li>
+ * <li>后端服务（{@link NosslConfiguration}）以独立进程在随机端口启动</li>
  * </ul>
  * </p>
  * <p>
- * 同时验证在此场景下，整个链路中<strong>不出现</strong> HTTP/2 的连接前言
- * （{@code "PRI * HTTP/2.0"}），因为网关到后端使用的是 HTTP/1.1。
+ * 同时验证在此场景下，整个链路中<strong>不出现</strong> HTTP/2 的连接前言 （{@code "PRI * HTTP/2.0"}），因为网关到后端使用的是
+ * HTTP/1.1。
  * </p>
  *
  * @author Spencer Gibb
  */
 @ExtendWith(OutputCaptureExtension.class) // 启用标准输出/错误输出捕获
-@SpringBootTest(classes = Http2Application.class, webEnvironment = WebEnvironment.RANDOM_PORT) // 随机端口启动 Gateway 应用
+@SpringBootTest(classes = Http2Application.class, webEnvironment = WebEnvironment.RANDOM_PORT) // 随机端口启动
+// Gateway
+// 应用
 @DirtiesContext // 测试完成后重置 Spring 上下文
 public class NosslTests {
 
@@ -96,13 +97,12 @@ public class NosslTests {
 	 * <p>
 	 * 测试步骤：
 	 * <ol>
-	 *   <li>读取分配给后端服务的非 TLS 端口</li>
-	 *   <li>以该端口启动 {@link NosslConfiguration} 作为独立 HTTP 后端服务</li>
-	 *   <li>通过网关 HTTPS 访问 {@code /nossl} 路径</li>
-	 *   <li>验证响应体为 "nossl"，且日志中不含 HTTP/2 连接前言（后端链路为 HTTP/1.1）</li>
+	 * <li>读取分配给后端服务的非 TLS 端口</li>
+	 * <li>以该端口启动 {@link NosslConfiguration} 作为独立 HTTP 后端服务</li>
+	 * <li>通过网关 HTTPS 访问 {@code /nossl} 路径</li>
+	 * <li>验证响应体为 "nossl"，且日志中不含 HTTP/2 连接前言（后端链路为 HTTP/1.1）</li>
 	 * </ol>
 	 * </p>
-	 *
 	 * @param output 捕获的标准输出内容
 	 */
 	@Test

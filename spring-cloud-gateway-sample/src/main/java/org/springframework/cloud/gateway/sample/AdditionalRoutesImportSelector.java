@@ -28,21 +28,20 @@ import org.springframework.util.ClassUtils;
  * <p>
  * 工作原理：
  * <ol>
- *   <li>在 Spring 容器启动时，检查类路径中是否存在 {@code AdditionalRoutes} 类</li>
- *   <li>如果存在，则将该类导入到 Spring 容器中</li>
- *   <li>如果不存在，则不导入任何类</li>
+ * <li>在 Spring 容器启动时，检查类路径中是否存在 {@code AdditionalRoutes} 类</li>
+ * <li>如果存在，则将该类导入到 Spring 容器中</li>
+ * <li>如果不存在，则不导入任何类</li>
  * </ol>
  * <p>
  * 这种设计模式允许：
  * <ul>
- *   <li>可选地加载额外的路由配置</li>
- *   <li>避免类不存在时的 ClassNotFoundException</li>
- *   <li>支持模块化配置，根据环境动态加载</li>
+ * <li>可选地加载额外的路由配置</li>
+ * <li>避免类不存在时的 ClassNotFoundException</li>
+ * <li>支持模块化配置，根据环境动态加载</li>
  * </ul>
  * <p>
- * 使用场景：
- * 当需要在特定环境（如测试环境）中加载额外的路由配置，而在其他环境中不加载时，
- * 可以将 AdditionalRoutes 类放在特定环境的源代码目录中，本选择器会自动检测并导入。
+ * 使用场景： 当需要在特定环境（如测试环境）中加载额外的路由配置，而在其他环境中不加载时， 可以将 AdditionalRoutes
+ * 类放在特定环境的源代码目录中，本选择器会自动检测并导入。
  *
  * @see DeferredImportSelector
  * @see ClassUtils#isPresent(String, ClassLoader)
@@ -52,13 +51,10 @@ class AdditionalRoutesImportSelector implements DeferredImportSelector {
 	/**
 	 * 选择需要导入的配置类。
 	 * <p>
-	 * 检查类路径中是否存在 {@code org.springframework.cloud.gateway.sample.AdditionalRoutes} 类。
-	 * 使用 {@link ClassUtils#isPresent(String, ClassLoader)} 方法进行安全的类存在性检查，
-	 * 避免在类不存在时抛出异常。
-	 *
+	 * 检查类路径中是否存在 {@code org.springframework.cloud.gateway.sample.AdditionalRoutes} 类。 使用
+	 * {@link ClassUtils#isPresent(String, ClassLoader)} 方法进行安全的类存在性检查， 避免在类不存在时抛出异常。
 	 * @param importingClassMetadata 导入类的注解元数据，包含被注解类的信息
-	 * @return 需要导入的类的全限定名数组。如果 AdditionalRoutes 类存在，返回包含该类名的数组；
-	 * 否则返回空数组
+	 * @return 需要导入的类的全限定名数组。如果 AdditionalRoutes 类存在，返回包含该类名的数组； 否则返回空数组
 	 */
 	@Override
 	public String[] selectImports(AnnotationMetadata importingClassMetadata) {

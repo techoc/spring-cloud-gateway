@@ -38,19 +38,18 @@ import java.util.concurrent.TimeUnit;
 /**
  * Spring Cloud Gateway 示例应用程序主类。
  * <p>
- * 本类展示了如何使用 Spring Cloud Gateway 构建一个功能完整的 API 网关。
- * 包含以下功能示例：
+ * 本类展示了如何使用 Spring Cloud Gateway 构建一个功能完整的 API 网关。 包含以下功能示例：
  * <ul>
- *   <li>基于主机名和路径的路由配置</li>
- *   <li>请求/响应体修改</li>
- *   <li>限流控制（Token Bucket 算法）</li>
- *   <li>自定义响应头</li>
- *   <li>路径重写</li>
- *   <li>模拟 Actuator 端点</li>
+ * <li>基于主机名和路径的路由配置</li>
+ * <li>请求/响应体修改</li>
+ * <li>限流控制（Token Bucket 算法）</li>
+ * <li>自定义响应头</li>
+ * <li>路径重写</li>
+ * <li>模拟 Actuator 端点</li>
  * </ul>
  * <p>
- * 使用方式：运行 main 方法启动应用，默认监听 8080 端口。
- * 可以通过 application.yml 或命令行参数配置目标 URI（默认指向 httpbin.org）。
+ * 使用方式：运行 main 方法启动应用，默认监听 8080 端口。 可以通过 application.yml 或命令行参数配置目标 URI（默认指向
+ * httpbin.org）。
  *
  * @author Spencer Gibb
  */
@@ -60,15 +59,12 @@ import java.util.concurrent.TimeUnit;
 public class GatewaySampleApplication {
 
 	/**
-	 * 模拟 Actuator 指标端点的响应内容。
-	 * 用于测试当实际指标端点不可用时返回的替代响应。
+	 * 模拟 Actuator 指标端点的响应内容。 用于测试当实际指标端点不可用时返回的替代响应。
 	 */
 	public static final String HELLO_FROM_FAKE_ACTUATOR_METRICS_GATEWAY_REQUESTS = "hello from fake /actuator/metrics/spring.cloud.gateway.requests";
 
 	/**
-	 * 目标服务的 URI，通过配置文件注入。
-	 * 默认值为 http://httpbin.org:80，可用于测试。
-	 * 可以通过设置 test.uri 属性覆盖此值。
+	 * 目标服务的 URI，通过配置文件注入。 默认值为 http://httpbin.org:80，可用于测试。 可以通过设置 test.uri 属性覆盖此值。
 	 */
 	@Value("${test.uri:http://httpbin.org:80}")
 	String uri;
@@ -87,10 +83,10 @@ public class GatewaySampleApplication {
 	 * <p>
 	 * 本方法展示了多种路由配置模式：
 	 * <ul>
-	 *   <li>基于主机名和路径的组合匹配</li>
-	 *   <li>读取请求体进行断言</li>
-	 *   <li>修改请求体和响应体</li>
-	 *   <li>限流过滤器配置</li>
+	 * <li>基于主机名和路径的组合匹配</li>
+	 * <li>读取请求体进行断言</li>
+	 * <li>修改请求体和响应体</li>
+	 * <li>限流过滤器配置</li>
 	 * </ul>
 	 *
 	 * @param builder 路由定位器构建器，用于创建路由规则
@@ -201,9 +197,7 @@ public class GatewaySampleApplication {
 	/**
 	 * 配置测试用的函数式路由。
 	 * <p>
-	 * 当访问 /testfun 路径时，返回 "hello" 字符串响应。
-	 * 展示了 Spring WebFlux 的函数式编程风格路由配置。
-	 *
+	 * 当访问 /testfun 路径时，返回 "hello" 字符串响应。 展示了 Spring WebFlux 的函数式编程风格路由配置。
 	 * @return 配置好的路由器函数
 	 */
 	@Bean
@@ -216,9 +210,7 @@ public class GatewaySampleApplication {
 	/**
 	 * 配置模拟的 Actuator 指标端点。
 	 * <p>
-	 * 当访问 /actuator/metrics/spring.cloud.gateway.requests 时，
-	 * 返回预定义的模拟响应，用于测试场景。
-	 *
+	 * 当访问 /actuator/metrics/spring.cloud.gateway.requests 时， 返回预定义的模拟响应，用于测试场景。
 	 * @return 配置好的路由器函数
 	 */
 	@Bean
@@ -232,8 +224,7 @@ public class GatewaySampleApplication {
 	/**
 	 * 内部类，用于请求体修改示例。
 	 * <p>
-	 * 表示一个简单的问候消息对象，包含 message 字段。
-	 * 用于演示如何将 String 类型的请求体转换为 JSON 对象。
+	 * 表示一个简单的问候消息对象，包含 message 字段。 用于演示如何将 String 类型的请求体转换为 JSON 对象。
 	 */
 	static class Hello {
 
@@ -250,7 +241,6 @@ public class GatewaySampleApplication {
 
 		/**
 		 * 带参数的构造方法。
-		 *
 		 * @param message 问候消息内容
 		 */
 		Hello(String message) {
@@ -259,7 +249,6 @@ public class GatewaySampleApplication {
 
 		/**
 		 * 获取问候消息。
-		 *
 		 * @return 消息内容
 		 */
 		public String getMessage() {
@@ -268,7 +257,6 @@ public class GatewaySampleApplication {
 
 		/**
 		 * 设置问候消息。
-		 *
 		 * @param message 消息内容
 		 */
 		public void setMessage(String message) {

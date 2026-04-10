@@ -16,12 +16,6 @@
 
 package org.springframework.cloud.gateway.tests.grpc;
 
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.net.ssl.SSLContext;
-
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -36,26 +30,30 @@ import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+
+import javax.net.ssl.SSLContext;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
 /**
  * JSON 转 gRPC 协议转换集成测试类。
  * <p>
- * 验证 Spring Cloud Gateway 的 {@code JsonToGrpc} 过滤器能够将客户端发送的 JSON HTTP 请求
- * 自动转换为 gRPC 协议请求，并将 gRPC 服务端返回的 Protobuf 响应转换为 JSON 格式返回给客户端。
+ * 验证 Spring Cloud Gateway 的 {@code JsonToGrpc} 过滤器能够将客户端发送的 JSON HTTP 请求 自动转换为 gRPC
+ * 协议请求，并将 gRPC 服务端返回的 Protobuf 响应转换为 JSON 格式返回给客户端。
  * </p>
  * <p>
  * 测试流程：
  * <ol>
- *   <li>通过 Actuator 动态注册带有 {@code JsonToGrpc} 过滤器的路由</li>
- *   <li>使用 RestTemplate 发送 JSON 格式的 HTTP POST 请求到网关</li>
- *   <li>验证网关返回的 JSON 响应是否包含正确的 gRPC 服务处理结果</li>
+ * <li>通过 Actuator 动态注册带有 {@code JsonToGrpc} 过滤器的路由</li>
+ * <li>使用 RestTemplate 发送 JSON 格式的 HTTP POST 请求到网关</li>
+ * <li>验证网关返回的 JSON 响应是否包含正确的 gRPC 服务处理结果</li>
  * </ol>
  * </p>
  *
@@ -87,15 +85,15 @@ public class JsonToGrpcApplicationTests {
 	/**
 	 * 测试：通过网关将 JSON HTTP 请求转换并代理到 gRPC 服务，验证 JSON↔gRPC 协议转换正确性。
 	 * <p>
-	 * 由于 gRPC 服务器与网关运行在同一应用实例中，端口在测试启动时才能确定，
-	 * 因此需要通过 Actuator 接口动态注册带有 {@code JsonToGrpc} 过滤器的路由。
+	 * 由于 gRPC 服务器与网关运行在同一应用实例中，端口在测试启动时才能确定， 因此需要通过 Actuator 接口动态注册带有 {@code JsonToGrpc}
+	 * 过滤器的路由。
 	 * </p>
 	 * <p>
 	 * 路由配置说明：
 	 * <ul>
-	 *   <li>路径：{@code /json/hello}</li>
-	 *   <li>过滤器：{@code JsonToGrpc=<pb文件>,<proto文件>,<服务名>,<方法名>}</li>
-	 *   <li>目标：{@code https://localhost:<grpcServerPort>}</li>
+	 * <li>路径：{@code /json/hello}</li>
+	 * <li>过滤器：{@code JsonToGrpc=<pb文件>,<proto文件>,<服务名>,<方法名>}</li>
+	 * <li>目标：{@code https://localhost:<grpcServerPort>}</li>
 	 * </ul>
 	 * </p>
 	 */
@@ -123,13 +121,11 @@ public class JsonToGrpcApplicationTests {
 	/**
 	 * 创建一个跳过 SSL 证书验证的 {@link RestTemplate}（测试环境专用）。
 	 * <p>
-	 * 使用 Apache HttpClient 构建底层连接，配置信任所有证书的策略和禁用主机名校验，
-	 * 以支持访问使用自签名证书的 HTTPS 端点。
+	 * 使用 Apache HttpClient 构建底层连接，配置信任所有证书的策略和禁用主机名校验， 以支持访问使用自签名证书的 HTTPS 端点。
 	 * </p>
 	 * <p>
 	 * <strong>警告：</strong>此方法仅适用于测试目的，严禁在生产环境使用。
 	 * </p>
-	 *
 	 * @return 配置了不安全 SSL 的 RestTemplate 实例
 	 */
 	private RestTemplate createUnsecureClient() {

@@ -18,7 +18,6 @@ package org.springframework.cloud.gateway.sample;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -27,15 +26,13 @@ import org.springframework.cloud.gateway.support.MvcFoundOnClasspathFailureAnaly
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * MVC 失败分析器集成测试类。
  * <p>
- * 用于验证当 Spring MVC 出现在类路径上时，Spring Cloud Gateway 能够正确检测
- * 并通过 {@link MvcFoundOnClasspathFailureAnalyzer} 给出友好的失败提示信息。
+ * 用于验证当 Spring MVC 出现在类路径上时，Spring Cloud Gateway 能够正确检测 并通过
+ * {@link MvcFoundOnClasspathFailureAnalyzer} 给出友好的失败提示信息。
  * </p>
  *
  * @author Spencer Gibb
@@ -46,10 +43,8 @@ public class MvcFailureAnalyzerApplicationTests {
 	/**
 	 * 测试：当 MVC 存在于类路径时，启动应用程序应抛出异常。
 	 * <p>
-	 * 验证根异常类型为 {@link MvcFoundOnClasspathException}，
-	 * 并且日志输出中包含失败分析器定义的提示消息和处理建议。
+	 * 验证根异常类型为 {@link MvcFoundOnClasspathException}， 并且日志输出中包含失败分析器定义的提示消息和处理建议。
 	 * </p>
-	 *
 	 * @param output 捕获的标准输出内容
 	 */
 	@Test
@@ -65,10 +60,8 @@ public class MvcFailureAnalyzerApplicationTests {
 	/**
 	 * 测试：当 Spring Cloud Gateway 被禁用时，即使 MVC 存在于类路径也不应抛出异常。
 	 * <p>
-	 * 通过设置 {@code spring.cloud.gateway.enabled=false} 来禁用网关，
-	 * 此时启动应该正常完成，不触发 MVC 检测逻辑。
+	 * 通过设置 {@code spring.cloud.gateway.enabled=false} 来禁用网关， 此时启动应该正常完成，不触发 MVC 检测逻辑。
 	 * </p>
-	 *
 	 * @param output 捕获的标准输出内容
 	 */
 	@Test
@@ -84,10 +77,9 @@ public class MvcFailureAnalyzerApplicationTests {
 	/**
 	 * 测试：当显式指定 Web 应用类型为 Reactive 时，应用应正常启动并响应请求。
 	 * <p>
-	 * 通过设置 {@code spring.main.web-application-type=reactive} 强制使用响应式模式，
-	 * 绕过 MVC 冲突检测，并验证路由 {@code /myprefix/hello} 正确返回 "Hello"。
+	 * 通过设置 {@code spring.main.web-application-type=reactive} 强制使用响应式模式， 绕过 MVC 冲突检测，并验证路由
+	 * {@code /myprefix/hello} 正确返回 "Hello"。
 	 * </p>
-	 *
 	 * @param output 捕获的标准输出内容
 	 */
 	@Test
