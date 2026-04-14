@@ -16,35 +16,6 @@
 
 package org.springframework.cloud.gateway.mvc;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-
 import org.springframework.core.Conventions;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
@@ -69,11 +40,30 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor;
 
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 /**
- * A <code>@RequestMapping</code> argument type that can proxy the request to a backend.
- * Spring will inject one of these into your MVC handler method, and you get return a
- * <code>ResponseEntity</code> that you get from one of the HTTP methods {@link #get()},
- * {@link #post()}, {@link #put()}, {@link #patch()}, {@link #delete()} etc. Example:
+ * 一个可以代理请求到后端的@RequestMapping参数类型。
+ * Spring会将此对象注入到MVC处理方法中，您可以从HTTP方法{@link #get()}、
+ * {@link #post()}、{@link #put()}、{@link #patch()}、{@link #delete()}等返回一个
+ * <code>ResponseEntity</code>。示例：
  *
  * <pre>
  * &#64;GetMapping("/proxy/{id}")
@@ -84,25 +74,20 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBody
  * </pre>
  *
  * <p>
- * By default the incoming request body and headers are sent intact to the downstream
- * service (with the exception of "sensitive" headers). To manipulate the downstream
- * request there are "builder" style methods in {@link ProxyExchange}, but only the
- * {@link #uri(String)} is mandatory. You can change the sensitive headers by calling the
- * {@link #sensitive(String...)} method (Authorization and Cookie are sensitive by
- * default).
+ * 默认情况下，传入的请求体和头部会完整地发送到下游服务（除了"敏感"头部）。
+ * 要操作下游请求，{@link ProxyExchange}中提供了"构建器"风格的方法，
+ * 但只有{@link #uri(String)}是必需的。您可以通过调用{@link #sensitive(String...)}方法
+ * 更改敏感头部（Authorization和Cookie默认为敏感头部）。
  * </p>
  * <p>
- * The type parameter <code>T</code> in <code>ProxyExchange&lt;T&gt;</code> is the type of
- * the response body, so it comes out in the {@link ResponseEntity} that you return from
- * your <code>@RequestMapping</code>. If you don't care about the type of the request and
- * response body (e.g. if it's just a passthru) then use a wildcard, or
- * <code>byte[]</code> or <code>Object</code>. Use a concrete type if you want to
- * transform or manipulate the response, or if you want to assert that it is convertible
- * to the type you declare.
+ * <code>ProxyExchange&lt;T&gt;</code>中的类型参数<code>T</code>是响应体的类型，
+ * 因此它会出现在您从@RequestMapping返回的{@link ResponseEntity}中。
+ * 如果您不关心请求和响应体的类型（例如只是透传），则可以使用通配符、
+ * <code>byte[]</code>或<code>Object</code>。
+ * 如果要转换或操作响应，或者要断言它可以转换为您声明的类型，请使用具体类型。
  * </p>
  * <p>
- * To manipulate the response use the overloaded HTTP methods with a <code>Function</code>
- * argument and pass in code to transform the response. E.g.
+ * 要操作响应，请使用带有<code>Function</code>参数的重载HTTP方法并传入代码来转换响应。例如：
  *
  * <pre>
  * &#64;PostMapping("/proxy")
@@ -119,50 +104,85 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBody
  *
  * </p>
  * <p>
- * The full machinery of Spring {@link HttpMessageConverter message converters} is applied
- * to the incoming request and response and also to the backend request. If you need
- * additional converters then they need to be added upstream in the MVC configuration and
- * also to the {@link RestTemplate} that is used in the backend calls (see the
+ * Spring {@link HttpMessageConverter 消息转换器}的完整机制应用于传入的请求和响应以及后端请求。
+ * 如果需要额外的转换器，则需要在MVC配置的上游添加它们，
+ * 并在用于后端调用的{@link RestTemplate}中添加（详见
  * {@link ProxyExchange#ProxyExchange(RestTemplate, NativeWebRequest, ModelAndViewContainer, WebDataBinderFactory, Type)
- * constructor} for details).
+ * 构造函数}）。
  * </p>
  * <p>
- * As well as the HTTP methods for a backend call you can also use
- * {@link #forward(String)} for a local in-container dispatch.
+ * 除了用于后端调用的HTTP方法外，您还可以使用{@link #forward(String)}进行本地容器内分发。
  * <p>
  * </p>
  *
  * @author Dave Syer
- *
  */
 public class ProxyExchange<T> {
 
 	/**
-	 * Contains headers that are considered case-sensitive by default.
+	 * 包含默认视为敏感的头部。
 	 */
 	public static Set<String> DEFAULT_SENSITIVE = Collections
 			.unmodifiableSet(new HashSet<>(Arrays.asList("cookie", "authorization")));
 
+	/**
+	 * 后端URI。
+	 */
 	private URI uri;
 
+	/**
+	 * RestTemplate实例。
+	 */
 	private RestTemplate rest;
 
+	/**
+	 * 请求体。
+	 */
 	private Object body;
 
+	/**
+	 * 请求体响应方法处理器代理。
+	 */
 	private RequestResponseBodyMethodProcessor delegate;
 
+	/**
+	 * Web请求。
+	 */
 	private NativeWebRequest webRequest;
 
+	/**
+	 * ModelAndView容器。
+	 */
 	private ModelAndViewContainer mavContainer;
 
+	/**
+	 * 数据绑定工厂。
+	 */
 	private WebDataBinderFactory binderFactory;
 
+	/**
+	 * 敏感头部名称集合。
+	 */
 	private Set<String> sensitive;
 
+	/**
+	 * HTTP头部信息。
+	 */
 	private HttpHeaders headers = new HttpHeaders();
 
+	/**
+	 * 响应类型。
+	 */
 	private Type responseType;
 
+	/**
+	 * 构造ProxyExchange实例。
+	 * @param rest RestTemplate实例
+	 * @param webRequest Web请求
+	 * @param mavContainer ModelAndView容器
+	 * @param binderFactory 数据绑定工厂
+	 * @param type 响应类型
+	 */
 	public ProxyExchange(RestTemplate rest, NativeWebRequest webRequest, ModelAndViewContainer mavContainer,
 			WebDataBinderFactory binderFactory, Type type) {
 		this.responseType = type;
@@ -251,11 +271,20 @@ public class ProxyExchange<T> {
 		}
 	}
 
+	/**
+	 * 获取请求路径。
+	 * @return 请求路径
+	 */
 	public String path() {
 		return (String) this.webRequest.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
 				WebRequest.SCOPE_REQUEST);
 	}
 
+	/**
+	 * 获取去除前缀后的请求路径。
+	 * @param prefix 前缀
+	 * @return 去除前缀后的路径
+	 */
 	public String path(String prefix) {
 		String path = path();
 		if (!path.startsWith(prefix)) {
@@ -264,6 +293,10 @@ public class ProxyExchange<T> {
 		return path.substring(prefix.length());
 	}
 
+	/**
+	 * 转发请求到本地路径。
+	 * @param path 本地路径
+	 */
 	public void forward(String path) {
 		HttpServletRequest request = this.webRequest.getNativeRequest(HttpServletRequest.class);
 		HttpServletResponse response = this.webRequest.getNativeResponse(HttpServletResponse.class);
@@ -276,69 +309,144 @@ public class ProxyExchange<T> {
 		}
 	}
 
+	/**
+	 * 执行GET请求。
+	 * @return 响应实体
+	 */
 	public ResponseEntity<T> get() {
 		RequestEntity<?> requestEntity = headers((BodyBuilder) RequestEntity.get(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 执行GET请求并转换响应。
+	 * @param converter 响应转换器
+	 * @param <S> 转换后的响应类型
+	 * @return 转换后的响应实体
+	 */
 	public <S> ResponseEntity<S> get(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return converter.apply(get());
 	}
 
+	/**
+	 * 执行HEAD请求。
+	 * @return 响应实体
+	 */
 	public ResponseEntity<T> head() {
 		RequestEntity<?> requestEntity = headers((BodyBuilder) RequestEntity.head(uri)).build();
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 执行HEAD请求并转换响应。
+	 * @param converter 响应转换器
+	 * @param <S> 转换后的响应类型
+	 * @return 转换后的响应实体
+	 */
 	public <S> ResponseEntity<S> head(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return converter.apply(head());
 	}
 
+	/**
+	 * 执行OPTIONS请求。
+	 * @return 响应实体
+	 */
 	public ResponseEntity<T> options() {
 		RequestEntity<?> requestEntity = headers((BodyBuilder) RequestEntity.options(uri)).build();
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 执行OPTIONS请求并转换响应。
+	 * @param converter 响应转换器
+	 * @param <S> 转换后的响应类型
+	 * @return 转换后的响应实体
+	 */
 	public <S> ResponseEntity<S> options(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return converter.apply(options());
 	}
 
+	/**
+	 * 执行POST请求。
+	 * @return 响应实体
+	 */
 	public ResponseEntity<T> post() {
 		RequestEntity<Object> requestEntity = headers(RequestEntity.post(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 执行POST请求并转换响应。
+	 * @param converter 响应转换器
+	 * @param <S> 转换后的响应类型
+	 * @return 转换后的响应实体
+	 */
 	public <S> ResponseEntity<S> post(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return converter.apply(post());
 	}
 
+	/**
+	 * 执行DELETE请求。
+	 * @return 响应实体
+	 */
 	public ResponseEntity<T> delete() {
 		RequestEntity<Object> requestEntity = headers((BodyBuilder) RequestEntity.delete(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 执行DELETE请求并转换响应。
+	 * @param converter 响应转换器
+	 * @param <S> 转换后的响应类型
+	 * @return 转换后的响应实体
+	 */
 	public <S> ResponseEntity<S> delete(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return converter.apply(delete());
 	}
 
+	/**
+	 * 执行PUT请求。
+	 * @return 响应实体
+	 */
 	public ResponseEntity<T> put() {
 		RequestEntity<Object> requestEntity = headers(RequestEntity.put(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 执行PUT请求并转换响应。
+	 * @param converter 响应转换器
+	 * @param <S> 转换后的响应类型
+	 * @return 转换后的响应实体
+	 */
 	public <S> ResponseEntity<S> put(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return converter.apply(put());
 	}
 
+	/**
+	 * 执行PATCH请求。
+	 * @return 响应实体
+	 */
 	public ResponseEntity<T> patch() {
 		RequestEntity<Object> requestEntity = headers(RequestEntity.patch(uri)).body(body());
 		return exchange(requestEntity);
 	}
 
+	/**
+	 * 执行PATCH请求并转换响应。
+	 * @param converter 响应转换器
+	 * @param <S> 转换后的响应类型
+	 * @return 转换后的响应实体
+	 */
 	public <S> ResponseEntity<S> patch(Function<ResponseEntity<T>, ResponseEntity<S>> converter) {
 		return converter.apply(patch());
 	}
 
+	/**
+	 * 执行请求交换。
+	 * @param requestEntity 请求实体
+	 * @return 响应实体
+	 */
 	private ResponseEntity<T> exchange(RequestEntity<?> requestEntity) {
 		Type type = this.responseType;
 		if (type instanceof TypeVariable || type instanceof WildcardType) {
@@ -347,6 +455,10 @@ public class ProxyExchange<T> {
 		return rest.exchange(requestEntity, ParameterizedTypeReference.forType(type));
 	}
 
+	/**
+	 * 添加头部信息。
+	 * @param headers HTTP头部
+	 */
 	private void addHeaders(HttpHeaders headers) {
 		ArrayList<String> headerNames = new ArrayList<>();
 		webRequest.getHeaderNames().forEachRemaining(headerNames::add);
@@ -355,6 +467,11 @@ public class ProxyExchange<T> {
 				.forEach(header -> headers.addAll(header, Arrays.asList(webRequest.getHeaderValues(header))));
 	}
 
+	/**
+	 * 设置头部信息到请求构建器。
+	 * @param builder 请求体构建器
+	 * @return 请求体构建器
+	 */
 	private BodyBuilder headers(BodyBuilder builder) {
 		proxy();
 		for (String name : filterHeaderKeys(headers)) {
@@ -364,16 +481,29 @@ public class ProxyExchange<T> {
 		return builder;
 	}
 
+	/**
+	 * 过滤HTTP头部键。
+	 * @param headers HTTP头部
+	 * @return 过滤后的头部键集合
+	 */
 	private Set<String> filterHeaderKeys(HttpHeaders headers) {
 		return filterHeaderKeys(headers.keySet());
 	}
 
+	/**
+	 * 过滤头部名称集合，移除敏感头部。
+	 * @param headerNames 头部名称集合
+	 * @return 过滤后的头部名称集合
+	 */
 	private Set<String> filterHeaderKeys(Collection<String> headerNames) {
 		final Set<String> sensitiveHeaders = this.sensitive != null ? this.sensitive : DEFAULT_SENSITIVE;
 		return headerNames.stream().filter(header -> !sensitiveHeaders.contains(header.toLowerCase()))
 				.collect(Collectors.toSet());
 	}
 
+	/**
+	 * 设置代理相关头部信息。
+	 */
 	private void proxy() {
 		try {
 			URI uri = new URI(webRequest.getNativeRequest(HttpServletRequest.class).getRequestURL().toString());
@@ -386,6 +516,10 @@ public class ProxyExchange<T> {
 		}
 	}
 
+	/**
+	 * 追加X-Forwarded头部信息。
+	 * @param uri URI
+	 */
 	private void appendXForwarded(URI uri) {
 		// Append the legacy headers if they were already added upstream
 		String host = headers.getFirst("x-forwarded-host");
@@ -402,6 +536,10 @@ public class ProxyExchange<T> {
 		headers.set("x-forwarded-proto", proto);
 	}
 
+	/**
+	 * 追加Forwarded头部信息。
+	 * @param uri URI
+	 */
 	private void appendForwarded(URI uri) {
 		String forwarded = headers.getFirst("forwarded");
 		if (forwarded != null) {
@@ -414,6 +552,12 @@ public class ProxyExchange<T> {
 		headers.set("forwarded", forwarded);
 	}
 
+	/**
+	 * 构建Forwarded头部值。
+	 * @param uri URI
+	 * @param hostHeader 主机头部
+	 * @return Forwarded头部值
+	 */
 	private String forwarded(URI uri, String hostHeader) {
 		if (!StringUtils.isEmpty(hostHeader)) {
 			return "host=" + hostHeader;
@@ -424,6 +568,10 @@ public class ProxyExchange<T> {
 		return String.format("host=%s;proto=%s", uri.getHost(), uri.getScheme());
 	}
 
+	/**
+	 * 获取请求体。
+	 * @return 请求体对象
+	 */
 	private Object body() {
 		if (body != null) {
 			return body;
@@ -433,10 +581,10 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * Search for the request body if it was already deserialized using
-	 * <code>@RequestBody</code>. If it is not found then deserialize it in the same way
-	 * that it would have been for a <code>@RequestBody</code>.
-	 * @return the request body
+	 * 获取请求体。
+	 * 如果已经使用@RequestBody反序列化，则搜索请求体；
+	 * 如果未找到，则以与@RequestBody相同的方式反序列化它。
+	 * @return 请求体
 	 */
 	private Object getRequestBody() {
 		for (String key : mavContainer.getModel().keySet()) {
@@ -457,16 +605,31 @@ public class ProxyExchange<T> {
 		return result.getTarget();
 	}
 
+	/**
+	 * 用于获取请求体的辅助类。
+	 */
 	protected static class BodyGrabber {
 
+		/**
+		 * 获取请求体。
+		 * @param body 请求体对象
+		 * @return 请求体对象
+		 */
 		public Object body(@RequestBody(required = false) Object body) {
 			return body;
 		}
 
 	}
 
+	/**
+	 * 用于发送请求体的辅助类。
+	 */
 	protected static class BodySender {
 
+		/**
+		 * 获取响应体。
+		 * @return 响应体对象
+		 */
 		@ResponseBody
 		public Object body() {
 			return null;
@@ -475,23 +638,37 @@ public class ProxyExchange<T> {
 	}
 
 	/**
-	 * A servlet request wrapper that can be safely passed downstream to an internal
-	 * forward dispatch, caching its body, and making it available in converted form using
-	 * Spring message converters.
-	 *
+	 * 一个servlet请求包装器，可以安全地传递到内部转发分发，
+	 * 缓存其主体，并使用Spring消息转换器以转换形式提供。
 	 */
 	class BodyForwardingHttpServletRequest extends HttpServletRequestWrapper {
 
+		/**
+		 * HTTP请求。
+		 */
 		private HttpServletRequest request;
 
+		/**
+		 * HTTP响应。
+		 */
 		private HttpServletResponse response;
 
+		/**
+		 * 构造BodyForwardingHttpServletRequest实例。
+		 * @param request HTTP请求
+		 * @param response HTTP响应
+		 */
 		BodyForwardingHttpServletRequest(HttpServletRequest request, HttpServletResponse response) {
 			super(request);
 			this.request = request;
 			this.response = response;
 		}
 
+		/**
+		 * 获取指定名称的头部值列表。
+		 * @param name 头部名称
+		 * @return 头部值列表
+		 */
 		private List<String> header(String name) {
 			List<String> list = headers.get(name);
 			return list;
@@ -546,20 +723,23 @@ public class ProxyExchange<T> {
 }
 
 /**
- * Convenience class that converts an incoming request input stream into a form that can
- * be easily deserialized to a Java object using Spring message converters. It is only
- * used in a local forward dispatch, in which case there is a danger that the request body
- * will need to be read and analysed more than once. Apart from using the message
- * converters the other main feature of this class is that the request body is cached and
- * can be read repeatedly as necessary.
+ * 便捷类，将传入的请求输入流转换为可以使用Spring消息转换器轻松反序列化为Java对象的形式。
+ * 它仅在本地转发分发中使用，在这种情况下，请求体可能需要多次读取和分析。
+ * 除了使用消息转换器外，此类的主要功能是缓存请求体，并可以根据需要重复读取。
  *
  * @author Dave Syer
- *
  */
 class ServletOutputToInputConverter extends HttpServletResponseWrapper {
 
+	/**
+	 * 字符串构建器，用于缓存请求体。
+	 */
 	private StringBuilder builder = new StringBuilder();
 
+	/**
+	 * 构造ServletOutputToInputConverter实例。
+	 * @param response HTTP响应
+	 */
 	ServletOutputToInputConverter(HttpServletResponse response) {
 		super(response);
 	}

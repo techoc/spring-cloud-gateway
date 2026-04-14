@@ -16,10 +16,6 @@
 
 package org.springframework.cloud.gateway.mvc.config;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -38,9 +34,12 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
 /**
- * Autoconfiguration for the {@link ProxyExchange} argument handler in Spring MVC
- * <code>@RequestMapping</code> methods.
+ * Spring MVC @RequestMapping方法中{@link ProxyExchange}参数处理器的自动配置。
  *
  * @author Dave Syer
  * @author Tim Ysewyn
@@ -54,6 +53,13 @@ public class ProxyResponseAutoConfiguration implements WebMvcConfigurer {
 	@Autowired
 	private ApplicationContext context;
 
+	/**
+	 * 创建ProxyExchange参数解析器Bean。
+	 *
+	 * @param optional RestTemplate构建器（可选）
+	 * @param proxy    代理配置属性
+	 * @return ProxyExchange参数解析器
+	 */
 	@Bean
 	@ConditionalOnMissingBean
 	public ProxyExchangeArgumentResolver proxyExchangeArgumentResolver(Optional<RestTemplateBuilder> optional,
@@ -70,17 +76,29 @@ public class ProxyResponseAutoConfiguration implements WebMvcConfigurer {
 		ProxyExchangeArgumentResolver resolver = new ProxyExchangeArgumentResolver(template);
 		resolver.setHeaders(proxy.convertHeaders());
 		resolver.setAutoForwardedHeaders(proxy.getAutoForward());
-		resolver.setSensitive(proxy.getSensitive()); // can be null
+		resolver.setSensitive(proxy.getSensitive()); // 可以为null
 		return resolver;
 	}
 
+	/**
+	 * 添加参数解析器到Spring MVC配置中。
+	 * @param argumentResolvers 参数解析器列表
+	 */
 	@Override
 	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
 		argumentResolvers.add(context.getBean(ProxyExchangeArgumentResolver.class));
 	}
 
+	/**
+	 * 无操作响应错误处理器，不处理任何错误。
+	 */
 	private static class NoOpResponseErrorHandler extends DefaultResponseErrorHandler {
 
+		/**
+		 * 空实现，不处理任何错误响应。
+		 * @param response 客户端HTTP响应
+		 * @throws IOException IO异常
+		 */
 		@Override
 		public void handleError(ClientHttpResponse response) throws IOException {
 		}
