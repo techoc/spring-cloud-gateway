@@ -184,6 +184,15 @@ public class RoutePredicateHandlerMapping extends AbstractHandlerMapping {
 		})));
 	}
 
+	/**
+	 * 获取CORS配置信息。
+	 * <p>
+	 * 当前实现委托给父类处理。未来计划支持通过路由属性配置CORS（参见gh-229）。
+	 * </p>
+	 * @param handler 处理器对象
+	 * @param exchange 服务器Web交换对象
+	 * @return CORS配置信息，如果未配置则返回null
+	 */
 	@Override
 	protected CorsConfiguration getCorsConfiguration(Object handler, ServerWebExchange exchange) {
 		// TODO: support cors configuration via properties on a route see gh-229
